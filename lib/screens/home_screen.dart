@@ -4,11 +4,16 @@ import '../services/auto_update_service.dart';
 import '../services/channel_service.dart';
 import '../services/favorites_service.dart';
 import '../widgets/channel_card.dart';
+import '../widgets/update_badge.dart';
 import 'player_screen.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.updateChecker});
+
+  /// Fungsi pengecekan pembaruan. Default-nya memakai layanan sungguhan;
+  /// parameter ini dipakai test agar alur badge bisa diuji tanpa jaringan.
+  final Future<UpdateInfo?> Function()? updateChecker;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -23,6 +28,10 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
 
+  /// Informasi rilis baru yang tersedia. Tidak null berarti badge
+  /// "Pembaruan Tersedia" perlu ditampilkan di Home Screen.
+  UpdateInfo? _availableUpdate;
+
   @override
   void initState() {
     super.initState();
@@ -30,16 +39,29 @@ class _HomeScreenState extends State<HomeScreen> {
     _checkForAppUpdate();
   }
 
-  /// Cek pembaruan APK versi terbaru saat aplikasi dibuka
+  /// Cek pembaruan APK versi terbaru saat aplikasi dibuka.
+  ///
+  /// Jika ada versi baru, badge "Pembaruan Tersedia" otomatis muncul dengan
+  /// animasi dan dialog pembaruan ikut dibuka seperti sebelumnya. Badge
+  /// tetap bertahan sebagai pintu masuk pembaruan setelah dialog ditutup.
   Future<void> _checkForAppUpdate() async {
     // Beri sedikit jeda agar tampilan UI home tampil terlebih dahulu
     await Future.delayed(const Duration(milliseconds: 1200));
     if (!mounted) return;
 
-    final updateInfo = await AutoUpdateService.checkForUpdate();
-    if (updateInfo != null && mounted) {
-      AutoUpdateService.showUpdateDialog(context, updateInfo);
-    }
+    final updateInfo =
+        await (widget.updateChecker?.call() ?? AutoUpdateService.checkForUpdate());
+    if (updateInfo == null || !mounted) return;
+
+    setState(() => _availableUpdate = updateInfo);
+    AutoUpdateService.showUpdateDialog(context, updateInfo);
+  }
+
+  /// Tampilkan dialog pembaruan dari badge "Pembaruan Tersedia".
+  void _openUpdateDialog() {
+    final info = _availableUpdate;
+    if (info == null) return;
+    AutoUpdateService.showUpdateDialog(context, info);
   }
 
   Future<void> _loadChannels() async {
@@ -200,7 +222,33 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: _openSettings,
           ),
           IconButton(
-            icon: const Icon(Icons.system_update_rounded, color: Colors.amberAccent),
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  Icons.system_update_rounded,
+                  color: _availableUpdate != null
+                      ? Colors.redAccent
+                      : Colors.amberAccent,
+                ),
+                // Titik merah penanda bahwa ada versi baru yang tersedia.
+                if (_availableUpdate != null)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      key: const Key('update-appbar-dot'),
+                      width: 9,
+                      height: 9,
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFF171A24), width: 1.5),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             tooltip: 'Cek Pembaruan APK',
             onPressed: () async {
               final messenger = ScaffoldMessenger.of(context);
@@ -214,6 +262,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final info = await AutoUpdateService.checkForUpdate();
               if (!mounted) return;
               if (info != null) {
+                setState(() => _availableUpdate = info);
                 AutoUpdateService.showUpdateDialog(this.context, info);
               } else {
                 messenger.showSnackBar(
@@ -233,6 +282,33 @@ class _HomeScreenState extends State<HomeScreen> {
         onRefresh: _loadChannels,
         child: Column(
           children: [
+            // Badge "Pembaruan Tersedia" - muncul otomatis saat versi baru
+            // terdeteksi, dengan animasi slide turun + fade saat masuk.
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 350),
+              switchInCurve: Curves.easeOutCubic,
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, -0.6),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  ),
+                );
+              },
+              child: _availableUpdate == null
+                  ? const SizedBox(width: double.infinity, key: ValueKey('no-update'))
+                  : UpdateBadge(
+                      key: ValueKey(
+                          'update-badge-${_availableUpdate!.latestVersionCode}'),
+                      updateInfo: _availableUpdate!,
+                      onTap: _openUpdateDialog,
+                    ),
+            ),
+
             // Kotak Pencarian Channel
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
