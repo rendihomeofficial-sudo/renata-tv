@@ -24,6 +24,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   late Channel _currentChannel;
   bool _isFavorite = false;
   bool _isLoading = true;
+  bool _isFullScreen = false;
 
   // Webview controller
   WebViewController? _webViewController;
@@ -112,6 +113,28 @@ class _PlayerScreenState extends State<PlayerScreen> {
     _setupPlayer();
   }
 
+  /// Masuk atau keluar mode Full Screen
+  /// Saat Full Screen: WAJIB Landscape (LandscapeLeft / LandscapeRight) & sembunyikan status bar
+  /// Saat keluar Full Screen: Kembali ke PortraitUp
+  void _toggleFullScreen() {
+    setState(() {
+      _isFullScreen = !_isFullScreen;
+    });
+
+    if (_isFullScreen) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    } else {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+      ]);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    }
+  }
+
   @override
   void dispose() {
     WakelockPlus.disable();
@@ -119,11 +142,91 @@ class _PlayerScreenState extends State<PlayerScreen> {
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Mode Full Screen: Tampilan penuh layar tanpa AppBar & Daftar Channel
+    if (_isFullScreen) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) {
+            _toggleFullScreen();
+          }
+        },
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: Stack(
+            children: [
+              Positioned.fill(
+                child: _buildPlayerView(),
+              ),
+              // Tombol kontrol mengambang untuk keluar Fullscreen
+              Positioned(
+                top: 16,
+                right: 16,
+                child: SafeArea(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.white24, width: 1),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.fullscreen_exit_rounded,
+                          color: Colors.white, size: 28),
+                      tooltip: 'Keluar Layar Penuh',
+                      onPressed: _toggleFullScreen,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 16,
+                left: 16,
+                child: SafeArea(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white24, width: 1),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: Colors.redAccent,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _currentChannel.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Mode Normal (Portrait)
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -131,9 +234,12 @@ class _PlayerScreenState extends State<PlayerScreen> {
         foregroundColor: Colors.white,
         title: Row(
           children: [
-            Text(
-              _currentChannel.name,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Expanded(
+              child: Text(
+                _currentChannel.name,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             const SizedBox(width: 8),
             Container(
@@ -169,43 +275,27 @@ class _PlayerScreenState extends State<PlayerScreen> {
           // Screen Player Container
           AspectRatio(
             aspectRatio: 16 / 9,
-            child: Container(
-              color: Colors.black,
-              child: Stack(
-                children: [
-                  if (_currentChannel.type == StreamType.youtube &&
-                      _youtubeController != null)
-                    YoutubePlayer(
-                      controller: _youtubeController!,
-                      showVideoProgressIndicator: true,
-                      progressIndicatorColor: Colors.redAccent,
-                      liveUIColor: Colors.redAccent,
-                    )
-                  else if (_webViewController != null)
-                    WebViewWidget(controller: _webViewController!)
-                  else
-                    const Center(
-                      child: Text('Format pemutar tidak didukung',
-                          style: TextStyle(color: Colors.white70)),
-                    ),
-
-                  if (_isLoading)
-                    Container(
+            child: Stack(
+              children: [
+                Positioned.fill(child: _buildPlayerView()),
+                // Tombol Full Screen (Masuk Mode Landscape)
+                Positioned(
+                  bottom: 8,
+                  right: 8,
+                  child: Container(
+                    decoration: BoxDecoration(
                       color: Colors.black54,
-                      child: const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(color: Colors.redAccent),
-                            SizedBox(height: 10),
-                            Text('Menghubungkan ke siaran live...',
-                                style: TextStyle(color: Colors.white70, fontSize: 12))
-                          ],
-                        ),
-                      ),
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                ],
-              ),
+                    child: IconButton(
+                      icon: const Icon(Icons.fullscreen_rounded,
+                          color: Colors.white, size: 24),
+                      tooltip: 'Layar Penuh (Landscape)',
+                      onPressed: _toggleFullScreen,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -279,7 +369,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   'Saluran TV Lainnya (${widget.allChannels.length})',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
                     fontSize: 13,
                   ),
                 ),
@@ -288,8 +378,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
           ),
 
           Expanded(
-            child: ListView.builder(
+            child: ListView.separated(
               itemCount: widget.allChannels.length,
+              separatorBuilder: (_, __) => const Divider(height: 1, color: Colors.white10),
               itemBuilder: (context, index) {
                 final ch = widget.allChannels[index];
                 final isSelected = ch.id == _currentChannel.id;
@@ -344,6 +435,53 @@ class _PlayerScreenState extends State<PlayerScreen> {
               },
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlayerView() {
+    return Container(
+      color: Colors.black,
+      child: Stack(
+        children: [
+          if (_currentChannel.type == StreamType.youtube &&
+              _youtubeController != null)
+            YoutubePlayer(
+              controller: _youtubeController!,
+              showVideoProgressIndicator: true,
+              progressIndicatorColor: Colors.redAccent,
+              liveUIColor: Colors.redAccent,
+              onEnterFullScreen: () {
+                if (!_isFullScreen) _toggleFullScreen();
+              },
+              onExitFullScreen: () {
+                if (_isFullScreen) _toggleFullScreen();
+              },
+            )
+          else if (_webViewController != null)
+            WebViewWidget(controller: _webViewController!)
+          else
+            const Center(
+              child: Text('Format pemutar tidak didukung',
+                  style: TextStyle(color: Colors.white70)),
+            ),
+
+          if (_isLoading)
+            Container(
+              color: Colors.black54,
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: Colors.redAccent),
+                    SizedBox(height: 10),
+                    Text('Menghubungkan ke siaran live...',
+                        style: TextStyle(color: Colors.white70, fontSize: 12))
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );

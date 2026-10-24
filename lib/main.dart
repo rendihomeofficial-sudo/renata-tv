@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'screens/home_screen.dart';
+import 'screens/splash_screen.dart';
+import 'widgets/offline_banner.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,7 +38,12 @@ class RenataTVApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      builder: (context, child) {
+        return OfflineBannerWrapper(
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+      home: const SplashScreen(),
     );
   }
 }
