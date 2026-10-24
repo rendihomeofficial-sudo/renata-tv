@@ -36,9 +36,9 @@ class UpdateInfo {
 
 class AutoUpdateService {
   /// URL endpoint JSON untuk cek update APK versi terbaru
-  /// Anda bisa meletakkan file version.json ini di GitHub Releases, Raw GitHub, atau hosting Anda sendiri
+  /// Terhubung ke repository GitHub resmi pengguna: rendihomeofficial-sudo/renata-tv
   static const String updateJsonUrl =
-      'https://raw.githubusercontent.com/renata-tv/releases/main/version.json';
+      'https://raw.githubusercontent.com/rendihomeofficial-sudo/renata-tv/main/version.json';
 
   /// Cek ke server apakah ada update APK baru
   static Future<UpdateInfo?> checkForUpdate() async {
@@ -77,8 +77,8 @@ class AutoUpdateService {
 
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return WillPopScope(
-              onWillPop: () async => !updateInfo.forceUpdate && !isDownloading,
+            return PopScope(
+              canPop: !updateInfo.forceUpdate && !isDownloading,
               child: AlertDialog(
                 backgroundColor: const Color(0xFF1E222A),
                 shape: RoundedRectangleBorder(

@@ -5,6 +5,7 @@ import '../services/channel_service.dart';
 import '../services/favorites_service.dart';
 import '../widgets/channel_card.dart';
 import 'player_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -45,18 +46,33 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
 
     final channels = ChannelService.getChannels();
-    final catList = ChannelService.getCategories(channels);
+    final customChannels = await _loadCustomChannels();
+    final allChannels = [...channels, ...customChannels];
+
+    final catList = ChannelService.getCategories(allChannels);
     if (!catList.contains('Favorit')) {
       catList.insert(1, 'Favorit');
     }
 
     setState(() {
-      _allChannels = channels;
+      _allChannels = allChannels;
       _categories = catList;
       _isLoading = false;
     });
 
     _applyFilter();
+  }
+
+  /// Ambil channel dari playlist M3U eksternal yang tersimpan di preferensi.
+  Future<List<Channel>> _loadCustomChannels() async {
+    final url = await FavoritesService.getCustomM3uUrl();
+    if (url == null || url.isEmpty) return <Channel>[];
+    try {
+      return await ChannelService.parseM3UFromUrl(url);
+    } catch (e) {
+      debugPrint('Gagal memuat playlist M3U: $e');
+      return <Channel>[];
+    }
   }
 
   Future<void> _applyFilter() async {
@@ -98,6 +114,20 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context) => PlayerScreen(
           channel: channel,
           allChannels: _allChannels,
+        ),
+      ),
+    );
+  }
+
+  void _openSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (routeContext) => SettingsScreen(
+          onPlaylistLoaded: (url) {
+            Navigator.pop(routeContext);
+            _loadChannels();
+          },
         ),
       ),
     );
@@ -165,10 +195,16 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.settings_rounded, color: Colors.white70),
+            tooltip: 'Playlist & Pengaturan',
+            onPressed: _openSettings,
+          ),
+          IconButton(
             icon: const Icon(Icons.system_update_rounded, color: Colors.amberAccent),
             tooltip: 'Cek Pembaruan APK',
             onPressed: () async {
-              ScaffoldMessenger.of(context).showSnackBar(
+              final messenger = ScaffoldMessenger.of(context);
+              messenger.showSnackBar(
                 const SnackBar(
                   content: Text('Memeriksa pembaruan RENATA TV...'),
                   duration: Duration(seconds: 1),
@@ -176,10 +212,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               );
               final info = await AutoUpdateService.checkForUpdate();
-              if (info != null && mounted) {
-                AutoUpdateService.showUpdateDialog(context, info);
-              } else if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+              if (!mounted) return;
+              if (info != null) {
+                AutoUpdateService.showUpdateDialog(this.context, info);
+              } else {
+                messenger.showSnackBar(
                   const SnackBar(
                     content: Text('Aplikasi Anda sudah versi terbaru!'),
                     backgroundColor: Colors.green,

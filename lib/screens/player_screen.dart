@@ -223,12 +223,19 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     color: Colors.white,
                     padding: const EdgeInsets.all(4),
                     child: _currentChannel.logoUrl.isNotEmpty
-                        ? Image.network(
-                            _currentChannel.logoUrl,
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) =>
-                                const Icon(Icons.tv, color: Colors.black54),
-                          )
+                        ? (_currentChannel.logoUrl.startsWith('assets/')
+                            ? Image.asset(
+                                _currentChannel.logoUrl,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) =>
+                                    const Icon(Icons.tv, color: Colors.black54),
+                              )
+                            : Image.network(
+                                _currentChannel.logoUrl,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) =>
+                                    const Icon(Icons.tv, color: Colors.black54),
+                              ))
                         : const Icon(Icons.tv, color: Colors.black54),
                   ),
                 ),
@@ -298,12 +305,19 @@ class _PlayerScreenState extends State<PlayerScreen> {
                       color: Colors.white,
                       padding: const EdgeInsets.all(4),
                       child: ch.logoUrl.isNotEmpty
-                          ? Image.network(
-                              ch.logoUrl,
-                              fit: BoxFit.contain,
-                              errorBuilder: (_, __, ___) =>
-                                  const Icon(Icons.tv, color: Colors.black38),
-                            )
+                          ? (ch.logoUrl.startsWith('assets/')
+                              ? Image.asset(
+                                  ch.logoUrl,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) =>
+                                      const Icon(Icons.tv, color: Colors.black38),
+                                )
+                              : Image.network(
+                                  ch.logoUrl,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) =>
+                                      const Icon(Icons.tv, color: Colors.black38),
+                                ))
                           : const Icon(Icons.tv, color: Colors.black38),
                     ),
                   ),

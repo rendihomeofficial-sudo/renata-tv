@@ -23,17 +23,16 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace "com.example.flutter_tv_app"
+    namespace "com.renata.tv"
     compileSdkVersion 34
-    ndkVersion flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '11'
     }
 
     sourceSets {
@@ -41,7 +40,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.flutter_tv_app"
+        applicationId "com.renata.tv"
         minSdkVersion 21
         targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
@@ -54,6 +53,14 @@ android {
             minifyEnabled false
             shrinkResources false
         }
+    }
+
+    // Matikan lint untuk build release.
+    // Task generateReleaseLintModel memuat classpath unit test plugin
+    // (Robolectric) yang berat dan sebelumnya menyebabkan OOM saat build.
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
     }
 }
 

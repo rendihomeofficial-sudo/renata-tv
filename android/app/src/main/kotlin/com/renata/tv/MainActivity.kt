@@ -1,4 +1,4 @@
-package com.example.flutter_tv_app
+package com.renata.tv
 
 import io.flutter.embedding.android.FlutterActivity
 

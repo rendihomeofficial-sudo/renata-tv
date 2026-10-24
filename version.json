@@ -1,7 +1,7 @@
 {
   "latestVersionCode": 2,
   "latestVersionName": "1.1.0",
-  "apkDownloadUrl": "https://github.com/renata-tv/releases/releases/download/v1.1.0/renata-tv-v1.1.0.apk",
-  "changelog": "1. Penambahan siaran TV nasional terlengkap\n2. Pemutar video full screen lebih cepat\n3. Perbaikan performa dan auto-update APK",
+  "apkDownloadUrl": "https://github.com/rendihomeofficial-sudo/renata-tv/releases/download/v1.1.0/renata-tv-v1.1.0.apk",
+  "changelog": "1. Penambahan siaran TV nasional terlengkap\n2. Semua logo siaran TV HD resmi & tampil offline cepat\n3. Pemutar video full screen responsif\n4. Fitur auto-update otomatis terhubung ke GitHub",
   "forceUpdate": false
 }

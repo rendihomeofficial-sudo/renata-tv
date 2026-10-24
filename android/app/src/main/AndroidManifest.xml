@@ -1,5 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.renata.tv">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Izin Akses Internet dan Streaming -->
     <uses-permission android:name="android.permission.INTERNET" />

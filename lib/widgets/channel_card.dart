@@ -85,15 +85,25 @@ class _ChannelCardState extends State<ChannelCard> {
                       ],
                     ),
                     child: widget.channel.logoUrl.isNotEmpty
-                        ? Image.network(
-                            widget.channel.logoUrl,
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) => const Icon(
-                              Icons.tv,
-                              color: Colors.black45,
-                              size: 32,
-                            ),
-                          )
+                        ? (widget.channel.logoUrl.startsWith('assets/')
+                            ? Image.asset(
+                                widget.channel.logoUrl,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.tv,
+                                  color: Colors.black45,
+                                  size: 32,
+                                ),
+                              )
+                            : Image.network(
+                                widget.channel.logoUrl,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.tv,
+                                  color: Colors.black45,
+                                  size: 32,
+                                ),
+                              ))
                         : const Icon(
                             Icons.tv,
                             color: Colors.black45,
