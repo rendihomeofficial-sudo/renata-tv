@@ -2,6 +2,6 @@
   "latestVersionCode": 3,
   "latestVersionName": "1.2.0",
   "apkDownloadUrl": "https://github.com/rendihomeofficial-sudo/renata-tv/releases/download/v1.2.0/renata-tv-v1.2.0.apk",
-  "changelog": "New Update",
+  "changelog": "Pembaruan RENATA TV v1.2.0:\n1. SplashScreen animasi logo RENATA TV saat aplikasi dibuka.\n2. Mode Layar Penuh (Fullscreen) yang otomatis mengunci orientasi Landscape.\n3. Banner notifikasi offline di bagian atas layar saat internet terputus.\n4. Perbaikan kompatibilitas pemutar YouTube pada mode layar penuh.",
   "forceUpdate": false
 }

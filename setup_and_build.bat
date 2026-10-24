@@ -10,7 +10,7 @@ echo.
 REM 1. Cek apakah Flutter sudah terpasang
 where flutter >nul 2>nul
 if %ERRORLEVEL% equ 0 (
-    echo [INFO] Flutter SDK sudah terpasang di komputer Anda!
+    echo [INFO] Flutter SDK sudah terpasang di komputer Anda.
     goto BUILD_PROCESS
 )
 
@@ -55,7 +55,7 @@ if %ERRORLEVEL% neq 0 (
 
 echo.
 echo ========================================================
-echo [4/4] BERHASIL! File APK RENATA TV siap dipasang:
+echo [4/4] BERHASIL. File APK RENATA TV siap dipasang:
 echo ========================================================
 echo Lokasi File APK:
 echo %CD%\build\app\outputs\flutter-apk\app-release.apk
@@ -64,6 +64,6 @@ echo.
 REM Membuka folder output tempat file APK berada di Windows Explorer
 explorer.exe "%CD%\build\app\outputs\flutter-apk"
 
-echo File APK sudah siap dikirim dan diinstall di HP Android Anda!
+echo File APK sudah siap dikirim dan diinstall di HP Android Anda.
 echo.
 pause

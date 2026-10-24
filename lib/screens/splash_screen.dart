@@ -122,7 +122,7 @@ class _SplashScreenState extends State<SplashScreen>
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.BorderSide(
+                        border: Border.all(
                           color: Colors.white.withOpacity(0.12),
                         ),
                       ),

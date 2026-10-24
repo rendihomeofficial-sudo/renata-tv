@@ -447,17 +447,22 @@ class _PlayerScreenState extends State<PlayerScreen> {
         children: [
           if (_currentChannel.type == StreamType.youtube &&
               _youtubeController != null)
-            YoutubePlayer(
-              controller: _youtubeController!,
-              showVideoProgressIndicator: true,
-              progressIndicatorColor: Colors.redAccent,
-              liveUIColor: Colors.redAccent,
+            // YoutubePlayerBuilder agar tombol fullscreen bawaan YouTube ikut
+            // memaksa orientasi Landscape di aplikasi ini
+            YoutubePlayerBuilder(
+              player: YoutubePlayer(
+                controller: _youtubeController!,
+                showVideoProgressIndicator: true,
+                progressIndicatorColor: Colors.redAccent,
+                liveUIColor: Colors.redAccent,
+              ),
               onEnterFullScreen: () {
                 if (!_isFullScreen) _toggleFullScreen();
               },
               onExitFullScreen: () {
                 if (_isFullScreen) _toggleFullScreen();
               },
+              builder: (_, player) => player,
             )
           else if (_webViewController != null)
             WebViewWidget(controller: _webViewController!)

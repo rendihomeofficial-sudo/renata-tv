@@ -1,7 +1,7 @@
 name: renata_tv
 description: "Aplikasi Nonton TV Android Native - RENATA TV"
 publish_to: "none"
-version: 1.1.0+2
+version: 1.2.0+3
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
