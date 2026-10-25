@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/channel.dart';
 import '../services/favorites_service.dart';
+
+/// Intent untuk menandai channel sebagai favorit lewat keyboard/remote
+/// (tombol F), karena pada Android TV tombol favorit tidak menerima fokus
+/// navigasi D-pad.
+class _ToggleFavoriteIntent extends Intent {
+  const _ToggleFavoriteIntent();
+}
 
 class ChannelCard extends StatefulWidget {
   final Channel channel;
@@ -20,11 +28,22 @@ class ChannelCard extends StatefulWidget {
 
 class _ChannelCardState extends State<ChannelCard> {
   bool _isFavorite = false;
+  bool _isFocused = false;
+
+  /// Tombol favorit sengaja tidak ikut dalam traversal fokus D-pad supaya
+  /// navigasi remote TV tetap rapi antar kartu channel.
+  final FocusNode _favoriteFocusNode = FocusNode(skipTraversal: true);
 
   @override
   void initState() {
     super.initState();
     _checkFavorite();
+  }
+
+  @override
+  void dispose() {
+    _favoriteFocusNode.dispose();
+    super.dispose();
   }
 
   Future<void> _checkFavorite() async {
@@ -37,137 +56,160 @@ class _ChannelCardState extends State<ChannelCard> {
   Future<void> _toggleFavorite() async {
     await FavoritesService.toggleFavorite(widget.channel.id);
     await _checkFavorite();
-    if (widget.onFavoriteChanged != null) {
-      widget.onFavoriteChanged!();
-    }
+    widget.onFavoriteChanged?.call();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 3,
-      color: const Color(0xFF1E222A),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Colors.white.withOpacity(0.08),
-          width: 1,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: widget.onTap,
-        splashColor: Colors.redAccent.withOpacity(0.2),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Bagian atas: Logo + Tombol Favorit
-              Row(
+    return Shortcuts(
+      shortcuts: const <ShortcutActivator, Intent>{
+        SingleActivator(LogicalKeyboardKey.keyF): _ToggleFavoriteIntent(),
+      },
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          _ToggleFavoriteIntent: CallbackAction<_ToggleFavoriteIntent>(
+            onInvoke: (_) {
+              _toggleFavorite();
+              return null;
+            },
+          ),
+        },
+        child: Card(
+          elevation: _isFocused ? 8 : 3,
+          color: const Color(0xFF1E222A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: _isFocused
+                  ? Colors.redAccent
+                  : Colors.white.withOpacity(0.08),
+              width: _isFocused ? 2 : 1,
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: widget.onTap,
+            focusColor: Colors.redAccent.withOpacity(0.15),
+            splashColor: Colors.redAccent.withOpacity(0.2),
+            onFocusChange: (hasFocus) {
+              if (mounted && hasFocus != _isFocused) {
+                setState(() => _isFocused = hasFocus);
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 54,
-                    height: 54,
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        )
-                      ],
-                    ),
-                    child: widget.channel.logoUrl.isNotEmpty
-                        ? (widget.channel.logoUrl.startsWith('assets/')
-                            ? Image.asset(
-                                widget.channel.logoUrl,
-                                fit: BoxFit.contain,
-                                errorBuilder: (_, __, ___) => const Icon(
-                                  Icons.tv,
-                                  color: Colors.black45,
-                                  size: 32,
-                                ),
-                              )
-                            : Image.network(
-                                widget.channel.logoUrl,
-                                fit: BoxFit.contain,
-                                errorBuilder: (_, __, ___) => const Icon(
-                                  Icons.tv,
-                                  color: Colors.black45,
-                                  size: 32,
-                                ),
-                              ))
-                        : const Icon(
-                            Icons.tv,
-                            color: Colors.black45,
-                            size: 32,
-                          ),
-                  ),
-                  IconButton(
-                    iconSize: 22,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    icon: Icon(
-                      _isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: _isFavorite ? Colors.redAccent : Colors.white38,
-                    ),
-                    onPressed: _toggleFavorite,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 10),
-
-              // Bagian bawah: Nama Channel + Kategori Tag
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.channel.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
+                  // Bagian atas: Logo + Tombol Favorit
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        width: 54,
+                        height: 54,
+                        padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: Colors.white10,
-                          borderRadius: BorderRadius.circular(4),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            )
+                          ],
                         ),
-                        child: Text(
-                          widget.channel.category,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        child: widget.channel.logoUrl.isNotEmpty
+                            ? (widget.channel.logoUrl.startsWith('assets/')
+                                ? Image.asset(
+                                    widget.channel.logoUrl,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) => const Icon(
+                                      Icons.tv,
+                                      color: Colors.black45,
+                                      size: 32,
+                                    ),
+                                  )
+                                : Image.network(
+                                    widget.channel.logoUrl,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) => const Icon(
+                                      Icons.tv,
+                                      color: Colors.black45,
+                                      size: 32,
+                                    ),
+                                  ))
+                            : const Icon(
+                                Icons.tv,
+                                color: Colors.black45,
+                                size: 32,
+                              ),
                       ),
-                      const Spacer(),
-                      const Icon(
-                        Icons.play_circle_fill_rounded,
-                        color: Colors.redAccent,
-                        size: 20,
+                      IconButton(
+                        iconSize: 22,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        focusNode: _favoriteFocusNode,
+                        icon: Icon(
+                          _isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color: _isFavorite ? Colors.redAccent : Colors.white38,
+                        ),
+                        onPressed: _toggleFavorite,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Bagian bawah: Nama Channel + Kategori Tag
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.channel.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.white10,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              widget.channel.category,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          const Icon(
+                            Icons.play_circle_fill_rounded,
+                            color: Colors.redAccent,
+                            size: 20,
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

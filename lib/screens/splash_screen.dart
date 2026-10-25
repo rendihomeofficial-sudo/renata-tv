@@ -15,6 +15,11 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
 
+  /// Timer perpindahan ke Home Screen. Disimpan agar bisa dibatalkan saat
+  /// widget dibuang supaya tidak ada callback yang berjalan setelah
+  /// aplikasi sudah pindah halaman.
+  Timer? _navigationTimer;
+
   @override
   void initState() {
     super.initState();
@@ -35,23 +40,24 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.forward();
 
     // Beri waktu 2.2 detik untuk animasi sebelum masuk ke Home
-    Timer(const Duration(milliseconds: 2200), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            transitionDuration: const Duration(milliseconds: 600),
-            pageBuilder: (_, __, ___) => const HomeScreen(),
-            transitionsBuilder: (_, animation, __, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-          ),
-        );
-      }
+    _navigationTimer = Timer(const Duration(milliseconds: 2200), () {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 600),
+          pageBuilder: (_, __, ___) => const HomeScreen(),
+          transitionsBuilder: (_, animation, __, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
+      );
     });
   }
 
   @override
   void dispose() {
+    _navigationTimer?.cancel();
+    _navigationTimer = null;
     _controller.dispose();
     super.dispose();
   }

@@ -5,7 +5,15 @@ import '../services/favorites_service.dart';
 class SettingsScreen extends StatefulWidget {
   final Function(String url) onPlaylistLoaded;
 
-  const SettingsScreen({super.key, required this.onPlaylistLoaded});
+  /// Dipanggil setelah playlist kustom berhasil dihapus. Opsional supaya
+  /// layar ini tetap bisa dipakai tanpa callback tersebut.
+  final VoidCallback? onPlaylistRemoved;
+
+  const SettingsScreen({
+    super.key,
+    required this.onPlaylistLoaded,
+    this.onPlaylistRemoved,
+  });
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -14,6 +22,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final _urlController = TextEditingController();
   bool _isLoading = false;
+  bool _hasSavedPlaylist = false;
   String? _statusMessage;
 
   @override
@@ -22,11 +31,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadSavedUrl();
   }
 
+  @override
+  void dispose() {
+    _urlController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadSavedUrl() async {
     final saved = await FavoritesService.getCustomM3uUrl();
+    if (!mounted) return;
     if (saved != null && saved.isNotEmpty) {
       _urlController.text = saved;
+      setState(() => _hasSavedPlaylist = true);
     }
+  }
+
+  /// Hapus playlist M3U kustom yang tersimpan dan kembali ke daftar channel
+  /// bawaan aplikasi.
+  Future<void> _removeCustomPlaylist() async {
+    await FavoritesService.removeCustomM3uUrl();
+    if (!mounted) return;
+
+    _urlController.clear();
+    setState(() {
+      _hasSavedPlaylist = false;
+      _statusMessage = 'Playlist kustom dihapus. Kembali ke daftar channel bawaan.';
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Playlist kustom berhasil dihapus.'),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    widget.onPlaylistRemoved?.call();
   }
 
   Future<void> _testAndSavePlaylist() async {
@@ -44,6 +83,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final channels = await ChannelService.parseM3UFromUrl(url);
       if (channels.isEmpty) {
+        if (!mounted) return;
         setState(() {
           _isLoading = false;
           _statusMessage = 'Gagal memuat atau tidak ada channel valid dalam playlist.';
@@ -52,21 +92,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
         await FavoritesService.saveCustomM3uUrl(url);
         widget.onPlaylistLoaded(url);
 
+        if (!mounted) return;
         setState(() {
           _isLoading = false;
+          _hasSavedPlaylist = true;
           _statusMessage = 'Berhasil memuat ${channels.length} channel dari playlist!';
         });
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Berhasil memuat ${channels.length} channel baru!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Berhasil memuat ${channels.length} channel baru!'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _statusMessage = 'Terjadi kesalahan: $e';
@@ -166,10 +207,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Text(
               _statusMessage!,
               style: TextStyle(
-                color: _statusMessage!.startsWith('Berhasil') ? Colors.greenAccent : Colors.orangeAccent,
+                color: (_statusMessage!.startsWith('Berhasil') ||
+                        _statusMessage!.contains('dihapus'))
+                    ? Colors.greenAccent
+                    : Colors.orangeAccent,
                 fontSize: 13,
               ),
               textAlign: TextAlign.center,
+            ),
+          ],
+
+          if (_hasSavedPlaylist) ...[
+            const SizedBox(height: 24),
+            OutlinedButton.icon(
+              onPressed: _removeCustomPlaylist,
+              icon: const Icon(Icons.delete_outline_rounded),
+              label: const Text('Hapus Playlist Kustom & Kembali ke Daftar Bawaan'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.redAccent,
+                side: const BorderSide(color: Colors.redAccent),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             ),
           ],
 

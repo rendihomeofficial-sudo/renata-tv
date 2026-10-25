@@ -34,4 +34,13 @@ class FavoritesService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyCustomM3uUrl, url);
   }
+
+  /// Hapus playlist M3U kustom yang tersimpan.
+  ///
+  /// Dipakai saat pengguna ingin kembali ke daftar channel bawaan, misalnya
+  /// setelah salah menempelkan URL playlist.
+  static Future<void> removeCustomM3uUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyCustomM3uUrl);
+  }
 }

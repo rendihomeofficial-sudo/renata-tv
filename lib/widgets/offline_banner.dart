@@ -20,6 +20,13 @@ class _OfflineBannerWrapperState extends State<OfflineBannerWrapper> {
   }
 
   @override
+  void dispose() {
+    // Hentikan polling koneksi supaya tidak berjalan terus di belakang layar.
+    _networkService.stopMonitoring();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
       valueListenable: _networkService.isOnline,

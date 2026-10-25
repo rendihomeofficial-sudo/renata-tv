@@ -1,7 +1,7 @@
 {
-  "latestVersionCode": 3,
-  "latestVersionName": "1.2.0",
-  "apkDownloadUrl": "https://github.com/rendihomeofficial-sudo/renata-tv/releases/download/v1.2.0/renata-tv-v1.2.0.apk",
-  "changelog": "Pembaruan RENATA TV v1.2.0:\n1. SplashScreen animasi logo RENATA TV saat aplikasi dibuka.\n2. Mode Layar Penuh (Fullscreen) yang otomatis mengunci orientasi Landscape.\n3. Banner notifikasi offline di bagian atas layar saat internet terputus.\n4. Perbaikan kompatibilitas pemutar YouTube pada mode layar penuh.",
+  "latestVersionCode": 4,
+  "latestVersionName": "1.3.0",
+  "apkDownloadUrl": "https://github.com/rendihomeofficial-sudo/renata-tv/releases/download/v1.3.0/renata-tv-v1.3.0.apk",
+  "changelog": "Pembaruan RENATA TV v1.3.0:\n1. Dukungan playlist M3U kustom: deteksi otomatis tipe stream (HLS, MP4/MKV, WebView).\n2. Tombol hapus playlist kustom di Pengaturan untuk kembali ke daftar channel bawaan.\n3. Pemutar video native untuk berkas progresif, lebih ringan daripada WebView.\n4. Tombol favorit channel kini bisa diakses lewat remote TV (tombol F) dan indikator fokus lebih jelas.\n5. Pemeriksaan pembaruan lebih hemat data: dilewati saat offline, hasil di-cache 10 menit, dialog tidak muncul otomatis jika pernah ditolak.\n6. Pemantauan koneksi internet adjusted (interval 30 detik) dan indikator offline lebih informatif.",
   "forceUpdate": false
 }

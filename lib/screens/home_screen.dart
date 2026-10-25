@@ -32,11 +32,28 @@ class _HomeScreenState extends State<HomeScreen> {
   /// "Pembaruan Tersedia" perlu ditampilkan di Home Screen.
   UpdateInfo? _availableUpdate;
 
+  /// Kode versi pembaruan yang dialognya sudah pernah ditolak pengguna.
+  Set<int> _dismissedUpdateCodes = <int>{};
+
   @override
   void initState() {
     super.initState();
+    _loadDismissedUpdates();
     _loadChannels();
     _checkForAppUpdate();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// Muat daftar versi pembaruan yang dialognya sudah ditolak.
+  Future<void> _loadDismissedUpdates() async {
+    final codes = await AutoUpdateService.loadDismissedUpdateCodes();
+    if (!mounted) return;
+    setState(() => _dismissedUpdateCodes = codes);
   }
 
   /// Cek pembaruan APK versi terbaru saat aplikasi dibuka.
@@ -54,6 +71,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (updateInfo == null || !mounted) return;
 
     setState(() => _availableUpdate = updateInfo);
+
+    // Kalau pengguna sudah menolak dialog ini sebelumnya, badge tetap
+    // ditampilkan tapi dialog tidak dibuka otomatis lagi.
+    if (_dismissedUpdateCodes.contains(updateInfo.latestVersionCode)) return;
+
     AutoUpdateService.showUpdateDialog(context, updateInfo);
   }
 
@@ -65,6 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadChannels() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
 
     final channels = ChannelService.getChannels();
@@ -76,13 +99,14 @@ class _HomeScreenState extends State<HomeScreen> {
       catList.insert(1, 'Favorit');
     }
 
+    if (!mounted) return;
     setState(() {
       _allChannels = allChannels;
       _categories = catList;
       _isLoading = false;
     });
 
-    _applyFilter();
+    await _applyFilter();
   }
 
   /// Ambil channel dari playlist M3U eksternal yang tersimpan di preferensi.
@@ -117,6 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
           .toList();
     }
 
+    if (!mounted) return;
     setState(() {
       _filteredChannels = list;
     });
@@ -127,6 +152,16 @@ class _HomeScreenState extends State<HomeScreen> {
       _selectedCategory = category;
     });
     _applyFilter();
+  }
+
+  /// Jumlah kolom grid channel menyesuaikan lebar layar yang tersedia.
+  /// HP hasilnya 2-3 kolom, tablet 4, dan TV/LAYAR besar 5-6 kolom.
+  int _crossAxisCountFor(double width) {
+    if (width >= 1200) return 6;
+    if (width >= 900) return 5;
+    if (width >= 600) return 4;
+    if (width >= 420) return 3;
+    return 2;
   }
 
   void _openPlayer(Channel channel) {
@@ -147,6 +182,10 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(
         builder: (routeContext) => SettingsScreen(
           onPlaylistLoaded: (url) {
+            Navigator.pop(routeContext);
+            _loadChannels();
+          },
+          onPlaylistRemoved: () {
             Navigator.pop(routeContext);
             _loadChannels();
           },
@@ -259,7 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   backgroundColor: Color(0xFF1E222A),
                 ),
               );
-              final info = await AutoUpdateService.checkForUpdate();
+              final info = await AutoUpdateService.checkForUpdate(force: true);
               if (!mounted) return;
               if (info != null) {
                 setState(() => _availableUpdate = info);
@@ -410,24 +449,31 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
                         )
-                      : GridView.builder(
-                          padding: const EdgeInsets.all(12),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 1.15,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                          ),
-                          itemCount: _filteredChannels.length,
-                          itemBuilder: (context, index) {
-                            final channel = _filteredChannels[index];
-                            return ChannelCard(
-                              channel: channel,
-                              onTap: () => _openPlayer(channel),
-                              onFavoriteChanged: () {
-                                if (_selectedCategory == 'Favorit') {
-                                  _applyFilter();
-                                }
+                      : LayoutBuilder(
+                          builder: (context, constraints) {
+                            final crossAxisCount =
+                                _crossAxisCountFor(constraints.maxWidth);
+                            return GridView.builder(
+                              padding: const EdgeInsets.all(12),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: crossAxisCount,
+                                childAspectRatio: 1.15,
+                                crossAxisSpacing: 10,
+                                mainAxisSpacing: 10,
+                              ),
+                              itemCount: _filteredChannels.length,
+                              itemBuilder: (context, index) {
+                                final channel = _filteredChannels[index];
+                                return ChannelCard(
+                                  channel: channel,
+                                  onTap: () => _openPlayer(channel),
+                                  onFavoriteChanged: () {
+                                    if (_selectedCategory == 'Favorit') {
+                                      _applyFilter();
+                                    }
+                                  },
+                                );
                               },
                             );
                           },

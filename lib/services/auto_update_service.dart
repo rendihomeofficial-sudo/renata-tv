@@ -7,6 +7,9 @@ import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'network_service.dart';
 
 class UpdateInfo {
   final int latestVersionCode;
@@ -40,29 +43,114 @@ class AutoUpdateService {
   static const String updateJsonUrl =
       'https://raw.githubusercontent.com/rendihomeofficial-sudo/renata-tv/main/version.json';
 
-  /// Cek ke server apakah ada update APK baru
-  static Future<UpdateInfo?> checkForUpdate() async {
+  /// Batas waktu satu kali permintaan ke server versi.
+  static const Duration requestTimeout = Duration(seconds: 8);
+
+  /// Lamanya hasil pengecekan terakhir dianggap masih relevan.
+  static const Duration cacheDuration = Duration(minutes: 10);
+
+  /// Awalan key preferensi untuk menandai dialog pembaruan yang sudah ditolak.
+  static const String _dismissedKeyPrefix = 'update_dialog_dismissed_';
+
+  /// Waktu pengecekan terakhir (untuk cache) dan hasilnya.
+  static DateTime? _lastCheckAt;
+  static UpdateInfo? _lastCheckResult;
+
+  /// Cek ke server apakah ada update APK baru.
+  ///
+  /// - Dilewati bila perangkat sedang offline (hemat kuota dan tidak menunda
+  ///   tampilan aplikasi).
+  /// - Hasil disimpan sebentar ([cacheDuration]) agar tidak mengecekan server
+  ///   setiap kali Home Screen dibangun ulang.
+  /// - Gunakan [force] = true untuk memaksa pengecekan baru (misalnya saat
+  ///   pengguna menekan tombol "Cek Pembaruan" di AppBar).
+  static Future<UpdateInfo?> checkForUpdate({bool force = false}) async {
+    final networkService = NetworkService();
+    if (!networkService.isOnline.value) {
+      debugPrint('Pengecekan pembaruan dilewati: perangkat sedang offline.');
+      return null;
+    }
+
+    if (!force &&
+        _lastCheckAt != null &&
+        DateTime.now().difference(_lastCheckAt!) < cacheDuration) {
+      return _lastCheckResult;
+    }
+
     try {
       final response = await http
           .get(Uri.parse(updateJsonUrl))
-          .timeout(const Duration(seconds: 5));
+          .timeout(requestTimeout);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final updateInfo = UpdateInfo.fromJson(data);
-
-        // Ambil versi aplikasi saat ini
-        final packageInfo = await PackageInfo.fromPlatform();
-        final currentCode = int.tryParse(packageInfo.buildNumber) ?? 1;
-
-        if (updateInfo.latestVersionCode > currentCode) {
-          return updateInfo;
-        }
+      if (response.statusCode != 200) {
+        debugPrint('Pengecekan pembaruan gagal: status ${response.statusCode}');
+        return null;
       }
+
+      final data = jsonDecode(response.body);
+      final updateInfo = UpdateInfo.fromJson(data);
+
+      // Ambil versi aplikasi saat ini
+      final packageInfo = await PackageInfo.fromPlatform();
+      final currentCode = int.tryParse(packageInfo.buildNumber) ?? 1;
+
+      UpdateInfo? result;
+      if (updateInfo.latestVersionCode > currentCode) {
+        result = updateInfo;
+      }
+
+      _lastCheckAt = DateTime.now();
+      _lastCheckResult = result;
+      return result;
     } catch (e) {
       debugPrint('Tidak dapat memeriksa pembaruan: $e');
     }
     return null;
+  }
+
+  /// Apakah dialog pembaruan untuk versi tertentu sudah pernah ditolak
+  /// pengguna? dipakai agar dialog tidak muncul otomatis setiap kali aplikasi
+  /// dibuka (badge "Pembaruan Tersedia" tetap ditampilkan).
+  static Future<bool> isUpdateDialogDismissed(int versionCode) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool('$_dismissedKeyPrefix$versionCode') ?? false;
+    } catch (e) {
+      debugPrint('Gagal membaca status dialog pembaruan: $e');
+      return false;
+    }
+  }
+
+  /// Tandai dialog pembaruan versi tertentu sebagai sudah ditolak.
+  static Future<void> markUpdateDialogDismissed(int versionCode) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('$_dismissedKeyPrefix$versionCode', true);
+    } catch (e) {
+      debugPrint('Gagal menyimpan status dialog pembaruan: $e');
+    }
+  }
+
+  /// Daftar kode versi yang dialog pembaruan-nya sudah ditolak pengguna.
+  ///
+  /// Dipanggil sekali saat aplikasi dibuka agar pengecekan pembaruan tetap
+  /// sinkron (tidak menambah jeda pada alur buka aplikasi).
+  static Future<Set<int>> loadDismissedUpdateCodes() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final result = <int>{};
+      for (final key in prefs.getKeys()) {
+        if (!key.startsWith(_dismissedKeyPrefix)) continue;
+        final code = int.tryParse(key.substring(_dismissedKeyPrefix.length));
+        if (code != null && (prefs.getBool(key) ?? false)) {
+          result.add(code);
+        }
+      }
+      return result;
+    } catch (e) {
+      debugPrint('Gagal membaca daftar pembaruan yang ditolak: $e');
+      return <int>{};
+    }
   }
 
   /// Menampilkan Pop-Up Dialog Update Otomatis kepada pengguna
@@ -172,7 +260,13 @@ class AutoUpdateService {
                 actions: [
                   if (!updateInfo.forceUpdate && !isDownloading)
                     TextButton(
-                      onPressed: () => Navigator.pop(ctx),
+                      onPressed: () {
+                        // Simpan status "ditolak" supaya dialog tidak muncul
+                        // otomatis lagi di sesi berikutnya.
+                        markUpdateDialogDismissed(
+                            updateInfo.latestVersionCode);
+                        Navigator.pop(ctx);
+                      },
                       child: const Text('Nanti Saja',
                           style: TextStyle(color: Colors.white54)),
                     ),

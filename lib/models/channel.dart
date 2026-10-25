@@ -2,6 +2,7 @@ enum StreamType {
   youtube, // Menggunakan YouTube Player
   webview, // Menggunakan WebView In-App (untuk embed URL seperti Detik, RCTI+, CNN, TVRI)
   m3u8,    // Menggunakan Native HLS Video Player
+  native,  // Menggunakan Native Video Player untuk file progresif (mp4, ts, mkv)
 }
 
 class Channel {
@@ -33,7 +34,7 @@ class Channel {
       logoUrl: json['logoUrl'] ?? '',
       category: json['category'] ?? 'Umum',
       type: StreamType.values.firstWhere(
-        (e) => e.toString() == 'StreamType.${json['type']}',
+        (e) => e.name == '${json['type']}',
         orElse: () => StreamType.webview,
       ),
       youtubeVideoId: json['youtubeVideoId'],

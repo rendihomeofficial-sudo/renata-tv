@@ -238,9 +238,7 @@ class ChannelService {
       final youtubeId = _youtubeIdFromUrl(line);
       final type = youtubeId != null
           ? StreamType.youtube
-          : (line.toLowerCase().contains('.m3u8')
-              ? StreamType.m3u8
-              : StreamType.webview);
+          : _detectStreamType(line);
 
       final name = pendingName.isNotEmpty ? pendingName : 'Channel';
       final id = pendingId.isNotEmpty
@@ -265,6 +263,29 @@ class ChannelService {
     }
 
     return result;
+  }
+
+  /// Deteksi jenis stream dari URL stream.
+  ///
+  /// - YouTube ditangani lebih dulu oleh [_youtubeIdFromUrl].
+  /// - URL .m3u8 (HLS) diputar dengan pemutar HLS native.
+  /// - Berkas video progresif (mp4/mkv/webm/mov) diputar dengan pemutar
+  ///   video native, bukan WebView.
+  /// - URL lainnya (embed web) memakai WebView.
+  static StreamType _detectStreamType(String url) {
+    final path = Uri.tryParse(url.trim())?.path.toLowerCase() ?? url.toLowerCase();
+
+    if (path.endsWith('.m3u8') || path.endsWith('.m3u')) {
+      return StreamType.m3u8;
+    }
+    if (path.endsWith('.mp4') ||
+        path.endsWith('.mkv') ||
+        path.endsWith('.webm') ||
+        path.endsWith('.mov') ||
+        path.endsWith('.ts')) {
+      return StreamType.native;
+    }
+    return StreamType.webview;
   }
 
   /// Ambil nilai atribut berformat key="value" dari baris #EXTINF.
