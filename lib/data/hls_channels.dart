@@ -1,36 +1,18 @@
 import '../models/channel.dart';
 
-/// Daftar kanal TV Indonesia tambahan yang disiarkan lewat HLS (.m3u8).
+/// Daftar kanal TV Indonesia & internasional yang disiarkan lewat HLS.
 ///
-/// Setiap URL di bawah ini sudah diverifikasi: playlist-nya bisa diakses
-/// dan segmen video di dalamnya berisi data TS/fMP4 yang valid. Logo
-/// disimpan sebagai aset lokal di `assets/logos/` supaya tampil cepat
-/// tanpa jaringan.
+/// Semua URL di bawah ini sudah diverifikasi lewat probe playlist:
+/// playlist dapat diakses dan segmen video di dalamnya berisi data
+/// TS/fMP4 yang valid. Kanal dengan beberapa mirror resmi menyimpan
+/// mirror alternatif pada `fallbackUrls` sehingga pemutar otomatis
+/// pindah ke mirror lain saat stream utama bermasalah.
+///
+/// Logo disimpan sebagai aset lokal di `assets/logos/` agar tampil cepat
+/// tanpa jaringan; bila logo daring dipakai, channel_card menanganinya.
 class HlsChannels {
   static const List<Channel> channels = [
-    // 1. Ahsan TV
-    Channel(
-      id: 'ahsan_tv',
-      name: 'Ahsan TV',
-      streamUrl: 'https://5bf7b725107e5.streamlock.net/ahsantv/ahsantv/playlist.m3u8',
-      logoUrl: 'assets/logos/ahsan_tv.png',
-      category: 'Religi',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Ahsan TV',
-    ),
-
-    // 2. AKTV
-    Channel(
-      id: 'aktv',
-      name: 'AKTV',
-      streamUrl: 'https://akativi.siar.us/live/akativi.m3u8',
-      logoUrl: 'assets/logos/aktv.png',
-      category: 'Nasional',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung AKTV',
-    ),
-
-    // 3. Al Wafa Tarim
+    // 1. Al Wafa Tarim
     Channel(
       id: 'al_wafa_tarim',
       name: 'Al Wafa Tarim',
@@ -41,40 +23,7 @@ class HlsChannels {
       description: 'Siaran Langsung Al Wafa Tarim',
     ),
 
-    // 4. Ashiil TV
-    Channel(
-      id: 'ashiil_tv',
-      name: 'Ashiil TV',
-      streamUrl: 'https://5bf7b725107e5.streamlock.net/ashiiltv/ashiiltv/playlist.m3u8',
-      logoUrl: 'assets/logos/ashiil_tv.png',
-      category: 'Religi',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Ashiil TV',
-    ),
-
-    // 5. Atambua TV
-    Channel(
-      id: 'atambua_tv',
-      name: 'Atambua TV',
-      streamUrl: 'http://122.248.43.242:1935/ATAMBUATV/_definst_/myStream/playlist.m3u8',
-      logoUrl: 'assets/logos/atambua_tv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Atambua TV',
-    ),
-
-    // 6. Balikpapan TV
-    Channel(
-      id: 'balikpapan_tv',
-      name: 'Balikpapan TV',
-      streamUrl: 'http://122.248.43.242:1935/BALIKPAPANTV/_definst_/myStream/playlist.m3u8',
-      logoUrl: 'assets/logos/balikpapan_tv.png',
-      category: 'Nasional',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Balikpapan TV',
-    ),
-
-    // 7. Bandung TV
+    // 2. Bandung TV
     Channel(
       id: 'bandung_tv',
       name: 'Bandung TV',
@@ -85,40 +34,7 @@ class HlsChannels {
       description: 'Siaran Langsung Bandung TV',
     ),
 
-    // 8. Banjar TV
-    Channel(
-      id: 'banjar_tv',
-      name: 'Banjar TV',
-      streamUrl: 'https://banjartv.siar.us/banjartv/live/playlist.m3u8',
-      logoUrl: 'assets/logos/banjar_tv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Banjar TV',
-    ),
-
-    // 9. Banten TV
-    Channel(
-      id: 'banten_tv',
-      name: 'Banten TV',
-      streamUrl: 'https://5bf7b725107e5.streamlock.net/bantentv/bantentv/playlist.m3u8',
-      logoUrl: 'assets/logos/banten_tv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Banten TV',
-    ),
-
-    // 10. BMS TV
-    Channel(
-      id: 'bms_tv',
-      name: 'BMS TV',
-      streamUrl: 'https://5bf7b725107e5.streamlock.net/bmstv/bmstv/playlist.m3u8',
-      logoUrl: 'assets/logos/bms_tv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung BMS TV',
-    ),
-
-    // 11. BN Channel
+    // 3. BN Channel
     Channel(
       id: 'bn_channel',
       name: 'BN Channel',
@@ -129,29 +45,7 @@ class HlsChannels {
       description: 'Siaran Langsung BN Channel',
     ),
 
-    // 12. BRTV
-    Channel(
-      id: 'brtv',
-      name: 'BRTV',
-      streamUrl: 'https://5bf7b725107e5.streamlock.net/brtv/brtv/playlist.m3u8',
-      logoUrl: 'assets/logos/brtv.png',
-      category: 'Nasional',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung BRTV',
-    ),
-
-    // 13. BTV
-    Channel(
-      id: 'btv',
-      name: 'BTV',
-      streamUrl: 'https://lnd0t3b922.tenbytecdn.com/ta-sg1/90369cf5-6ac2-411d-b3d0-15fae10a2e2c/master.m3u8',
-      logoUrl: 'assets/logos/btv.png',
-      category: 'Musik',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung BTV',
-    ),
-
-    // 14. Caruban TV
+    // 4. Caruban TV
     Channel(
       id: 'caruban_tv',
       name: 'Caruban TV',
@@ -162,7 +56,7 @@ class HlsChannels {
       description: 'Siaran Langsung Caruban TV',
     ),
 
-    // 15. DAAI TV
+    // 5. DAAI TV
     Channel(
       id: 'daai_tv',
       name: 'DAAI TV',
@@ -173,18 +67,7 @@ class HlsChannels {
       description: 'Siaran Langsung DAAI TV',
     ),
 
-    // 16. Davika TV
-    Channel(
-      id: 'davika_tv',
-      name: 'Davika TV',
-      streamUrl: 'https://5bf7b725107e5.streamlock.net/davika/davika/playlist.m3u8',
-      logoUrl: 'assets/logos/davika_tv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Davika TV',
-    ),
-
-    // 17. Dens Food Channel
+    // 6. Dens Food Channel
     Channel(
       id: 'dens_food_channel',
       name: 'Dens Food Channel',
@@ -195,7 +78,7 @@ class HlsChannels {
       description: 'Siaran Langsung Dens Food Channel',
     ),
 
-    // 18. Dhamma TV
+    // 7. Dhamma TV
     Channel(
       id: 'dhamma_tv',
       name: 'Dhamma TV',
@@ -206,7 +89,7 @@ class HlsChannels {
       description: 'Siaran Langsung Dhamma TV',
     ),
 
-    // 19. Dhoho TV
+    // 8. Dhoho TV
     Channel(
       id: 'dhoho_tv',
       name: 'Dhoho TV',
@@ -217,7 +100,7 @@ class HlsChannels {
       description: 'Siaran Langsung Dhoho TV',
     ),
 
-    // 20. Duta TV
+    // 9. Duta TV
     Channel(
       id: 'duta_tv',
       name: 'Duta TV',
@@ -228,18 +111,23 @@ class HlsChannels {
       description: 'Siaran Langsung Duta TV',
     ),
 
-    // 21. E International
+    // 10. E International
     Channel(
       id: 'e_international',
       name: 'E International',
-      streamUrl: 'https://vodcdn.bamboo-cloud.com/livehls/69a123b780c99d28cc0f0016/master.m3u8',
-      logoUrl: 'assets/logos/e_international.png',
-      category: 'Nasional',
+      streamUrl: 'https://gist.githubusercontent.com/iptvonlinetv/cf56ccf36d1c0827e4dc470db7b7912d/raw/066b1c9755b2496805575f16d413bd1207ca8117/udp410.310.578:2020.m3u8',
+      logoUrl: '',
+      category: 'General',
       type: StreamType.m3u8,
       description: 'Siaran Langsung E International',
+      fallbackUrls: [
+        'https://vodcdn.bamboo-cloud.com/livehls/69a123b780c99d28cc0f0016/master.m3u8',
+        'https://gist.githubusercontent.com/iptvonlinetv/cf56ccf36d1c0827e4dc470db7b7912d/raw/066b1c9755b2496805575f16d413bd1207ca8117/udp315.520.789:8060.m3u8',
+        'https://gist.githubusercontent.com/iptvonlinetv/cf56ccf36d1c0827e4dc470db7b7912d/raw/066b1c9755b2496805575f16d413bd1207ca8117/udp120.510.450:6060.m3u8',
+      ],
     ),
 
-    // 22. Efarina TV
+    // 11. Efarina TV
     Channel(
       id: 'efarina_tv',
       name: 'Efarina TV',
@@ -250,7 +138,7 @@ class HlsChannels {
       description: 'Siaran Langsung Efarina TV',
     ),
 
-    // 23. Groovia Kanal
+    // 12. Groovia Kanal
     Channel(
       id: 'groovia_kanal',
       name: 'Groovia Kanal',
@@ -261,7 +149,7 @@ class HlsChannels {
       description: 'Siaran Langsung Groovia Kanal',
     ),
 
-    // 24. Groovia Kids
+    // 13. Groovia Kids
     Channel(
       id: 'groovia_kids',
       name: 'Groovia Kids',
@@ -272,7 +160,7 @@ class HlsChannels {
       description: 'Siaran Langsung Groovia Kids',
     ),
 
-    // 25. I Am Channel
+    // 14. I Am Channel
     Channel(
       id: 'i_am_channel',
       name: 'I Am Channel',
@@ -283,7 +171,7 @@ class HlsChannels {
       description: 'Siaran Langsung I Am Channel',
     ),
 
-    // 26. Jambi TV
+    // 15. Jambi TV
     Channel(
       id: 'jambi_tv',
       name: 'Jambi TV',
@@ -294,95 +182,7 @@ class HlsChannels {
       description: 'Siaran Langsung Jambi TV',
     ),
 
-    // 27. Jawa Pos TV
-    Channel(
-      id: 'jawa_pos_tv',
-      name: 'Jawa Pos TV',
-      streamUrl: 'http://122.248.43.242:1935/JAWAPOSTVJKT/_definst_/myStream/playlist.m3u8',
-      logoUrl: 'assets/logos/jawa_pos_tv.png',
-      category: 'Nasional',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Jawa Pos TV',
-    ),
-
-    // 28. Jek TV
-    Channel(
-      id: 'jek_tv',
-      name: 'Jek TV',
-      streamUrl: 'http://27.124.81.245:1935/jektv/myStream/playlist.m3u8',
-      logoUrl: 'assets/logos/jek_tv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Jek TV',
-    ),
-
-    // 29. Jogja Istimewa TV
-    Channel(
-      id: 'jogja_istimewa_tv',
-      name: 'Jogja Istimewa TV',
-      streamUrl: 'http://103.255.15.222:1935/tv/jitv_720p/playlist.m3u8',
-      logoUrl: 'assets/logos/jogja_istimewa_tv.png',
-      category: 'Nasional',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Jogja Istimewa TV',
-    ),
-
-    // 30. JTV Kediri
-    Channel(
-      id: 'jtv_kediri',
-      name: 'JTV Kediri',
-      streamUrl: 'http://122.248.43.242:1935/JTVKEDIRI/_definst_/myStream/playlist.m3u8',
-      logoUrl: 'assets/logos/jtv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung JTV Kediri',
-    ),
-
-    // 31. JTV Madiun
-    Channel(
-      id: 'jtv_madiun',
-      name: 'JTV Madiun',
-      streamUrl: 'http://122.248.43.242:1935/JTVMADIUN/_definst_/myStream/playlist.m3u8',
-      logoUrl: 'assets/logos/jtv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung JTV Madiun',
-    ),
-
-    // 32. JTV Malang
-    Channel(
-      id: 'jtv_malang',
-      name: 'JTV Malang',
-      streamUrl: 'http://122.248.43.242:1935/JTVMALANG/_definst_/myStream/playlist.m3u8',
-      logoUrl: 'assets/logos/jtv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung JTV Malang',
-    ),
-
-    // 33. JTV Surabaya
-    Channel(
-      id: 'jtv_surabaya',
-      name: 'JTV Surabaya',
-      streamUrl: 'http://122.248.43.242:1935/JTVSURABAYA/_definst_/myStream/playlist.m3u8',
-      logoUrl: 'assets/logos/jtv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung JTV Surabaya',
-    ),
-
-    // 34. Kawanua TV
-    Channel(
-      id: 'kawanua_tv',
-      name: 'Kawanua TV',
-      streamUrl: 'http://122.248.43.242:1935/KAWANUATV/_definst_/myStream/playlist.m3u8',
-      logoUrl: 'assets/logos/kawanua_tv.png',
-      category: 'Nasional',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Kawanua TV',
-    ),
-
-    // 35. Lingkar TV
+    // 16. Lingkar TV
     Channel(
       id: 'lingkar_tv',
       name: 'Lingkar TV',
@@ -393,7 +193,7 @@ class HlsChannels {
       description: 'Siaran Langsung Lingkar TV',
     ),
 
-    // 36. Madani TV
+    // 17. Madani TV
     Channel(
       id: 'madani_tv',
       name: 'Madani TV',
@@ -404,18 +204,7 @@ class HlsChannels {
       description: 'Siaran Langsung Madani TV',
     ),
 
-    // 37. Madu TV
-    Channel(
-      id: 'madu_tv',
-      name: 'Madu TV',
-      streamUrl: 'https://re1.siar.us/madutv/hd720/playlist.m3u8',
-      logoUrl: 'assets/logos/madu_tv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Madu TV',
-    ),
-
-    // 38. MDTV
+    // 18. MDTV
     Channel(
       id: 'mdtv',
       name: 'MDTV',
@@ -426,29 +215,7 @@ class HlsChannels {
       description: 'Siaran Langsung MDTV',
     ),
 
-    // 39. MQTV
-    Channel(
-      id: 'mqtv',
-      name: 'MQTV',
-      streamUrl: 'https://5bf7b725107e5.streamlock.net/mqtv/mqtv/playlist.m3u8',
-      logoUrl: 'assets/logos/mqtv.png',
-      category: 'Hiburan',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung MQTV',
-    ),
-
-    // 40. Padang TV
-    Channel(
-      id: 'padang_tv',
-      name: 'Padang TV',
-      streamUrl: 'http://122.248.43.242:1935/PADANGTV/_definst_/myStream/playlist.m3u8',
-      logoUrl: 'assets/logos/padang_tv.png',
-      category: 'Nasional',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Padang TV',
-    ),
-
-    // 41. PKTV
+    // 19. PKTV
     Channel(
       id: 'pktv',
       name: 'PKTV',
@@ -459,18 +226,7 @@ class HlsChannels {
       description: 'Siaran Langsung PKTV',
     ),
 
-    // 42. PONTV
-    Channel(
-      id: 'pontv',
-      name: 'PONTV',
-      streamUrl: 'http://122.248.43.242:1935/PONTV/_definst_/myStream/playlist.m3u8',
-      logoUrl: 'assets/logos/pontv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung PONTV',
-    ),
-
-    // 43. RBTV Jogja
+    // 20. RBTV Jogja
     Channel(
       id: 'rbtv_jogja',
       name: 'RBTV Jogja',
@@ -481,51 +237,7 @@ class HlsChannels {
       description: 'Siaran Langsung RBTV Jogja',
     ),
 
-    // 44. RCTV
-    Channel(
-      id: 'rctv',
-      name: 'RCTV',
-      streamUrl: 'https://v10.siar.us/rctv/live/playlist.m3u8',
-      logoUrl: 'assets/logos/rctv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung RCTV',
-    ),
-
-    // 45. Riau TV
-    Channel(
-      id: 'riau_tv',
-      name: 'Riau TV',
-      streamUrl: 'http://122.248.43.242:1935/RIAUTV/_definst_/myStream/playlist.m3u8',
-      logoUrl: 'assets/logos/riau_tv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Riau TV',
-    ),
-
-    // 46. Rodja TV
-    Channel(
-      id: 'rodja_tv',
-      name: 'Rodja TV',
-      streamUrl: 'https://rodjatv.com/rodjatv/live.m3u8',
-      logoUrl: 'assets/logos/rodja_tv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Rodja TV',
-    ),
-
-    // 47. RRI Net
-    Channel(
-      id: 'rri_net',
-      name: 'RRI Net',
-      streamUrl: 'https://private-streaming.rri.go.id/memfs/6f77c7b5-feb2-4935-9f89-e7e9fca0a54a_output_0.m3u8',
-      logoUrl: 'assets/logos/rri_net.png',
-      category: 'Berita',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung RRI Net',
-    ),
-
-    // 48. Salam TV
+    // 21. Salam TV
     Channel(
       id: 'salam_tv',
       name: 'Salam TV',
@@ -536,29 +248,21 @@ class HlsChannels {
       description: 'Siaran Langsung Salam TV',
     ),
 
-    // 49. Salira TV
+    // 22. Salira TV
     Channel(
       id: 'salira_tv',
       name: 'Salira TV',
-      streamUrl: 'https://live.salira.tv:3870/stream/play.m3u8',
-      logoUrl: 'assets/logos/salira_tv.png',
-      category: 'Gaya Hidup',
+      streamUrl: 'https://live.salira.tv/p/3870/hybrid/play.m3u8',
+      logoUrl: '',
+      category: 'Culture',
       type: StreamType.m3u8,
       description: 'Siaran Langsung Salira TV',
+      fallbackUrls: [
+        'https://live.salira.tv:3870/stream/play.m3u8',
+      ],
     ),
 
-    // 50. SMTV
-    Channel(
-      id: 'smtv',
-      name: 'SMTV',
-      streamUrl: 'http://122.248.43.242:1935/SMTV/_definst_/myStream/playlist.m3u8',
-      logoUrl: 'assets/logos/smtv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung SMTV',
-    ),
-
-    // 51. Stara TV Bandung
+    // 23. Stara TV Bandung
     Channel(
       id: 'stara_tv_bandung',
       name: 'Stara TV Bandung',
@@ -569,7 +273,7 @@ class HlsChannels {
       description: 'Siaran Langsung Stara TV Bandung',
     ),
 
-    // 52. Stara TV Bojonegoro
+    // 24. Stara TV Bojonegoro
     Channel(
       id: 'stara_tv_bojonegoro',
       name: 'Stara TV Bojonegoro',
@@ -580,7 +284,7 @@ class HlsChannels {
       description: 'Siaran Langsung Stara TV Bojonegoro',
     ),
 
-    // 53. Stara TV Cianjur
+    // 25. Stara TV Cianjur
     Channel(
       id: 'stara_tv_cianjur',
       name: 'Stara TV Cianjur',
@@ -591,51 +295,7 @@ class HlsChannels {
       description: 'Siaran Langsung Stara TV Cianjur',
     ),
 
-    // 54. Stara TV Jakarta
-    Channel(
-      id: 'stara_tv_jakarta',
-      name: 'Stara TV Jakarta',
-      streamUrl: 'https://jakarta.staratv.id/hls/0/stream.m3u8',
-      logoUrl: 'assets/logos/stara_tv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Stara TV Jakarta',
-    ),
-
-    // 55. Stara TV Malang
-    Channel(
-      id: 'stara_tv_malang',
-      name: 'Stara TV Malang',
-      streamUrl: 'https://malang.staratv.id/hls/0/stream.m3u8',
-      logoUrl: 'assets/logos/stara_tv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Stara TV Malang',
-    ),
-
-    // 56. Stara TV Parahyangan
-    Channel(
-      id: 'stara_tv_parahyangan',
-      name: 'Stara TV Parahyangan',
-      streamUrl: 'https://parahyangan.staratv.id/hls/0/stream.m3u8',
-      logoUrl: 'assets/logos/stara_tv.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung Stara TV Parahyangan',
-    ),
-
-    // 57. STV
-    Channel(
-      id: 'stv',
-      name: 'STV',
-      streamUrl: 'http://122.248.43.242:1935/SAMARINDATV/_definst_/myStream/playlist.m3u8',
-      logoUrl: 'assets/logos/stv.png',
-      category: 'Nasional',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung STV',
-    ),
-
-    // 58. Suara Surabaya Visual Radio
+    // 26. Suara Surabaya Visual Radio
     Channel(
       id: 'suara_surabaya_visual_radio',
       name: 'Suara Surabaya Visual Radio',
@@ -646,7 +306,7 @@ class HlsChannels {
       description: 'Siaran Langsung Suara Surabaya Visual Radio',
     ),
 
-    // 59. Surau TV
+    // 27. Surau TV
     Channel(
       id: 'surau_tv',
       name: 'Surau TV',
@@ -657,7 +317,7 @@ class HlsChannels {
       description: 'Siaran Langsung Surau TV',
     ),
 
-    // 60. The Indonesia Channel
+    // 28. The Indonesia Channel
     Channel(
       id: 'the_indonesia_channel',
       name: 'The Indonesia Channel',
@@ -668,29 +328,7 @@ class HlsChannels {
       description: 'Siaran Langsung The Indonesia Channel',
     ),
 
-    // 61. TV 9 Nusantara
-    Channel(
-      id: 'tv_9_nusantara',
-      name: 'TV 9 Nusantara',
-      streamUrl: 'https://5bf7b725107e5.streamlock.net/tv9/tv9/playlist.m3u8',
-      logoUrl: 'assets/logos/tv_9_nusantara.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung TV 9 Nusantara',
-    ),
-
-    // 62. TV Tabalong
-    Channel(
-      id: 'tv_tabalong',
-      name: 'TV Tabalong',
-      streamUrl: 'https://5bf7b725107e5.streamlock.net/tvtabalong/tvtabalong/playlist.m3u8',
-      logoUrl: 'assets/logos/tv_tabalong.png',
-      category: 'Daerah',
-      type: StreamType.m3u8,
-      description: 'Siaran Langsung TV Tabalong',
-    ),
-
-    // 63. TVRI Aceh
+    // 29. TVRI Aceh
     Channel(
       id: 'tvri_aceh',
       name: 'TVRI Aceh',
@@ -701,7 +339,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Aceh',
     ),
 
-    // 64. TVRI Ambon
+    // 30. TVRI Ambon
     Channel(
       id: 'tvri_ambon',
       name: 'TVRI Ambon',
@@ -712,7 +350,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Ambon',
     ),
 
-    // 65. TVRI Babel
+    // 31. TVRI Babel
     Channel(
       id: 'tvri_babel',
       name: 'TVRI Babel',
@@ -723,7 +361,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Babel',
     ),
 
-    // 66. TVRI Bali
+    // 32. TVRI Bali
     Channel(
       id: 'tvri_bali',
       name: 'TVRI Bali',
@@ -734,7 +372,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Bali',
     ),
 
-    // 67. TVRI Bengkulu
+    // 33. TVRI Bengkulu
     Channel(
       id: 'tvri_bengkulu',
       name: 'TVRI Bengkulu',
@@ -745,7 +383,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Bengkulu',
     ),
 
-    // 68. TVRI DKI
+    // 34. TVRI DKI
     Channel(
       id: 'tvri_dki',
       name: 'TVRI DKI',
@@ -756,7 +394,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI DKI',
     ),
 
-    // 69. TVRI Gorontalo
+    // 35. TVRI Gorontalo
     Channel(
       id: 'tvri_gorontalo',
       name: 'TVRI Gorontalo',
@@ -767,7 +405,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Gorontalo',
     ),
 
-    // 70. TVRI Jabar
+    // 36. TVRI Jabar
     Channel(
       id: 'tvri_jabar',
       name: 'TVRI Jabar',
@@ -778,7 +416,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Jabar',
     ),
 
-    // 71. TVRI Jambi
+    // 37. TVRI Jambi
     Channel(
       id: 'tvri_jambi',
       name: 'TVRI Jambi',
@@ -789,7 +427,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Jambi',
     ),
 
-    // 72. TVRI Jateng
+    // 38. TVRI Jateng
     Channel(
       id: 'tvri_jateng',
       name: 'TVRI Jateng',
@@ -800,7 +438,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Jateng',
     ),
 
-    // 73. TVRI Jatim
+    // 39. TVRI Jatim
     Channel(
       id: 'tvri_jatim',
       name: 'TVRI Jatim',
@@ -811,7 +449,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Jatim',
     ),
 
-    // 74. TVRI Jogjakarta
+    // 40. TVRI Jogjakarta
     Channel(
       id: 'tvri_jogjakarta',
       name: 'TVRI Jogjakarta',
@@ -822,7 +460,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Jogjakarta',
     ),
 
-    // 75. TVRI Kalbar
+    // 41. TVRI Kalbar
     Channel(
       id: 'tvri_kalbar',
       name: 'TVRI Kalbar',
@@ -833,7 +471,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Kalbar',
     ),
 
-    // 76. TVRI Kalsel
+    // 42. TVRI Kalsel
     Channel(
       id: 'tvri_kalsel',
       name: 'TVRI Kalsel',
@@ -844,7 +482,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Kalsel',
     ),
 
-    // 77. TVRI Kalteng
+    // 43. TVRI Kalteng
     Channel(
       id: 'tvri_kalteng',
       name: 'TVRI Kalteng',
@@ -855,7 +493,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Kalteng',
     ),
 
-    // 78. TVRI Kaltim
+    // 44. TVRI Kaltim
     Channel(
       id: 'tvri_kaltim',
       name: 'TVRI Kaltim',
@@ -866,7 +504,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Kaltim',
     ),
 
-    // 79. TVRI Lampung
+    // 45. TVRI Lampung
     Channel(
       id: 'tvri_lampung',
       name: 'TVRI Lampung',
@@ -877,7 +515,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Lampung',
     ),
 
-    // 80. TVRI Nasional
+    // 46. TVRI Nasional
     Channel(
       id: 'tvri_nasional',
       name: 'TVRI Nasional',
@@ -886,9 +524,14 @@ class HlsChannels {
       category: 'Daerah',
       type: StreamType.m3u8,
       description: 'Siaran Langsung TVRI Nasional',
+      fallbackUrls: [
+        'https://ott-balancer.tvri.go.id/live/eds/Aceh/hls/Aceh.m3u8',
+        'https://ott-balancer.tvri.go.id/live/eds/Bali/hls/Bali.m3u8',
+        'https://ott-balancer.tvri.go.id/live/eds/Babel/hls/Babel.m3u8',
+      ],
     ),
 
-    // 81. TVRI NTB
+    // 47. TVRI NTB
     Channel(
       id: 'tvri_ntb',
       name: 'TVRI NTB',
@@ -899,7 +542,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI NTB',
     ),
 
-    // 82. TVRI NTT
+    // 48. TVRI NTT
     Channel(
       id: 'tvri_ntt',
       name: 'TVRI NTT',
@@ -910,7 +553,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI NTT',
     ),
 
-    // 83. TVRI Pabar
+    // 49. TVRI Pabar
     Channel(
       id: 'tvri_pabar',
       name: 'TVRI Pabar',
@@ -921,7 +564,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Pabar',
     ),
 
-    // 84. TVRI Papua
+    // 50. TVRI Papua
     Channel(
       id: 'tvri_papua',
       name: 'TVRI Papua',
@@ -932,7 +575,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Papua',
     ),
 
-    // 85. TVRI Riau
+    // 51. TVRI Riau
     Channel(
       id: 'tvri_riau',
       name: 'TVRI Riau',
@@ -943,7 +586,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Riau',
     ),
 
-    // 86. TVRI Sulbar
+    // 52. TVRI Sulbar
     Channel(
       id: 'tvri_sulbar',
       name: 'TVRI Sulbar',
@@ -954,7 +597,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Sulbar',
     ),
 
-    // 87. TVRI Sulsel
+    // 53. TVRI Sulsel
     Channel(
       id: 'tvri_sulsel',
       name: 'TVRI Sulsel',
@@ -965,7 +608,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Sulsel',
     ),
 
-    // 88. TVRI Sulteng
+    // 54. TVRI Sulteng
     Channel(
       id: 'tvri_sulteng',
       name: 'TVRI Sulteng',
@@ -976,7 +619,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Sulteng',
     ),
 
-    // 89. TVRI Sultra
+    // 55. TVRI Sultra
     Channel(
       id: 'tvri_sultra',
       name: 'TVRI Sultra',
@@ -987,7 +630,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Sultra',
     ),
 
-    // 90. TVRI Sulut
+    // 56. TVRI Sulut
     Channel(
       id: 'tvri_sulut',
       name: 'TVRI Sulut',
@@ -998,7 +641,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Sulut',
     ),
 
-    // 91. TVRI Sumbar
+    // 57. TVRI Sumbar
     Channel(
       id: 'tvri_sumbar',
       name: 'TVRI Sumbar',
@@ -1009,7 +652,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Sumbar',
     ),
 
-    // 92. TVRI Sumut
+    // 58. TVRI Sumut
     Channel(
       id: 'tvri_sumut',
       name: 'TVRI Sumut',
@@ -1020,7 +663,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI Sumut',
     ),
 
-    // 93. TVRI World
+    // 59. TVRI World
     Channel(
       id: 'tvri_world',
       name: 'TVRI World',
@@ -1031,7 +674,7 @@ class HlsChannels {
       description: 'Siaran Langsung TVRI World',
     ),
 
-    // 94. USM TV
+    // 60. USM TV
     Channel(
       id: 'usm_tv',
       name: 'USM TV',
@@ -1042,7 +685,7 @@ class HlsChannels {
       description: 'Siaran Langsung USM TV',
     ),
 
-    // 95. VTV
+    // 61. VTV
     Channel(
       id: 'vtv',
       name: 'VTV',
@@ -1051,9 +694,12 @@ class HlsChannels {
       category: 'Nasional',
       type: StreamType.m3u8,
       description: 'Siaran Langsung VTV',
+      fallbackUrls: [
+        'https://sunplay-cdn.bitratelabs.com/live/local-channel/vtv-7a0f24809c234ea78d972b1f336ac1b9/index.m3u8',
+      ],
     ),
 
-    // 96. YOY International
+    // 62. YOY International
     Channel(
       id: 'yoy_international',
       name: 'YOY International',
@@ -1063,5 +709,618 @@ class HlsChannels {
       type: StreamType.m3u8,
       description: 'Siaran Langsung YOY International',
     ),
+
+    // 63. E International Asia
+    Channel(
+      id: 'e_international_asia',
+      name: 'E International Asia',
+      streamUrl: 'https://gist.githubusercontent.com/iptvonlinetv/cf56ccf36d1c0827e4dc470db7b7912d/raw/066b1c9755b2496805575f16d413bd1207ca8117/udp315.520.789:8060.m3u8',
+      logoUrl: 'https://hosting.renderforestsites.com/35126779/1659328/media/1058391c8059a0d092426e145d55951b.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung E International Asia',
+    ),
+
+    // 64. E International Europe
+    Channel(
+      id: 'e_international_europe',
+      name: 'E International Europe',
+      streamUrl: 'https://gist.githubusercontent.com/iptvonlinetv/cf56ccf36d1c0827e4dc470db7b7912d/raw/066b1c9755b2496805575f16d413bd1207ca8117/udp120.510.450:6060.m3u8',
+      logoUrl: 'https://hosting.renderforestsites.com/35126779/1659328/media/1058391c8059a0d092426e145d55951b.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung E International Europe',
+    ),
+
+    // 65. Jogja TV
+    Channel(
+      id: 'jogja_tv',
+      name: 'Jogja TV',
+      streamUrl: 'https://stream.jogjatv.co.id/jtvlive/stream/index.m3u8',
+      logoUrl: 'https://static.wikia.nocookie.net/logopedia/images/4/40/Jogjatvnew.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Jogja TV',
+    ),
+
+    // 66. Nusantara TV
+    Channel(
+      id: 'nusantara_tv',
+      name: 'Nusantara TV',
+      streamUrl: 'https://nusantaratv.siar.us/nusantaratv/live/playlist.m3u8',
+      logoUrl: 'https://i.imgur.com/viun5hj.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Nusantara TV',
+    ),
+
+    // 67. Rinjani TV
+    Channel(
+      id: 'rinjani_tv',
+      name: 'Rinjani TV',
+      streamUrl: 'https://rinjanitv.cloud/hls/tvkabel.m3u8',
+      logoUrl: 'https://lombokindustries.com/assunnah/zone/img/rinjanitv.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Rinjani TV',
+    ),
+
+    // 68. Sangaji TV
+    Channel(
+      id: 'sangaji_tv',
+      name: 'Sangaji TV',
+      streamUrl: 'https://cdn.adyadigitalteknologi.com:8090/vod/relay.m3u8',
+      logoUrl: 'https://i.imgur.com/4rTNT8F.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Sangaji TV',
+    ),
+
+    // 69. TATV
+    Channel(
+      id: 'tatv',
+      name: 'TATV',
+      streamUrl: 'https://v2.siar.us/tatv/live.sdp/playlist.m3u8',
+      logoUrl: 'https://i.imgur.com/1f0EC7t.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung TATV',
+    ),
+
+    // 70. TVRI South Sumatra
+    Channel(
+      id: 'tvri_south_sumatra',
+      name: 'TVRI South Sumatra',
+      streamUrl: 'https://ott-balancer.tvri.go.id/live/eds/Sumsel/hls/Sumsel.m3u8',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/TVRILogo2019.svg/960px-TVRILogo2019.svg.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung TVRI South Sumatra',
+    ),
+
+    // 71. U Channel
+    Channel(
+      id: 'u_channel',
+      name: 'U Channel',
+      streamUrl: 'https://srs.u-channel.tv/live/uchannel-tv.m3u8',
+      logoUrl: 'https://i.imgur.com/qxkb0cy.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung U Channel',
+    ),
+
+    // 72. UGTV
+    Channel(
+      id: 'ugtv',
+      name: 'UGTV',
+      streamUrl: 'https://cdn.gunadarma.ac.id/streams/ugtv/ingestugtv.m3u8',
+      logoUrl: 'https://i.imgur.com/iEKDH26.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung UGTV',
+    ),
+
+    // 73. ABC News
+    Channel(
+      id: 'abc_news',
+      name: 'ABC News',
+      streamUrl: 'https://abc-news-dmd-streams-1.akamaized.net/out/v1/701126012d044971b3fa89406a440133/index.m3u8',
+      logoUrl: 'https://i.imgur.com/BrW7gk8.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung ABC News',
+    ),
+
+    // 74. Al Jazeera English
+    Channel(
+      id: 'al_jazeera_english',
+      name: 'Al Jazeera English',
+      streamUrl: 'https://live-hls-apps-aje-fa.getaj.net/AJE/index.m3u8',
+      logoUrl: 'https://i.imgur.com/7bRVpnu.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Al Jazeera English',
+    ),
+
+    // 75. CNA
+    Channel(
+      id: 'cna',
+      name: 'CNA',
+      streamUrl: 'https://live1.mediadesk.al/cnatvlive.m3u8',
+      logoUrl: 'https://codeit.al/wp-content/uploads/2020/08/cna.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung CNA',
+    ),
+
+    // 76. CNN International
+    Channel(
+      id: 'cnn_international',
+      name: 'CNN International',
+      streamUrl: 'https://d3bp6dwmpbdajl.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-ury0meh5m4nzm/index.m3u8',
+      logoUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b8/CNN-International-Logo.svg/960px-CNN-International-Logo.svg.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung CNN International',
+    ),
+
+    // 77. Discovery Channel
+    Channel(
+      id: 'discovery_channel',
+      name: 'Discovery Channel',
+      streamUrl: 'http://88.212.7.14/live/discovery_hungary/index.m3u8',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/2019_Discovery_logo.svg/960px-2019_Discovery_logo.svg.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Discovery Channel',
+    ),
+
+    // 78. DW Arabic
+    Channel(
+      id: 'dw_arabic',
+      name: 'DW Arabic',
+      streamUrl: 'https://dwamdstream103.akamaized.net/hls/live/2015526/dwstream103/master.m3u8',
+      logoUrl: 'https://i.imgur.com/8MRNFb9.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung DW Arabic',
+    ),
+
+    // 79. DW English
+    Channel(
+      id: 'dw_english',
+      name: 'DW English',
+      streamUrl: 'https://amg01644-amg01644c1-amgplt0343.playout.now3.amagi.tv/ts-eu-w1-n2/playlist/amg01644-amg01644c1-amgplt0343/playlist.m3u8',
+      logoUrl: 'https://i.imgur.com/8MRNFb9.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung DW English',
+    ),
+
+    // 80. Euronews
+    Channel(
+      id: 'euronews',
+      name: 'Euronews',
+      streamUrl: 'https://cdn-euronews.akamaized.net/live/eds/euronews-pl/26382/index.m3u8',
+      logoUrl: 'https://images-2.rakuten.tv/storage/global-live-channel/translation/artwork/bc84c3b7-6008-4ee3-8f6a-e4bb4365f082-width200-quality90.jpeg',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Euronews',
+    ),
+
+    // 81. France 24
+    Channel(
+      id: 'france_24',
+      name: 'France 24',
+      streamUrl: 'https://live.france24.com/hls/live/2037179-b/F24_FR_HI_HLS/master_5000.m3u8',
+      logoUrl: 'https://i.imgur.com/u8N6uoj.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung France 24',
+    ),
+
+    // 82. France 24 Arabic
+    Channel(
+      id: 'france_24_arabic',
+      name: 'France 24 Arabic',
+      streamUrl: 'https://live.france24.com/hls/live/2037222-b/F24_AR_HI_HLS/master_5000.m3u8',
+      logoUrl: 'https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_FRANCE_24/images/LOGO_HD/image.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung France 24 Arabic',
+    ),
+
+    // 83. Nasa TV
+    Channel(
+      id: 'nasa_tv',
+      name: 'Nasa TV',
+      streamUrl: 'https://stream.nasatv.com.mk/hls/nasatv_live.m3u8',
+      logoUrl: 'https://i.imgur.com/9rB4VZy.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Nasa TV',
+    ),
+
+    // 84. Red Bull TV
+    Channel(
+      id: 'red_bull_tv',
+      name: 'Red Bull TV',
+      streamUrl: 'https://3ea22335.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWdiX1JlZEJ1bGxUVl9ITFM/playlist.m3u8',
+      logoUrl: 'https://images.pluto.tv/channels/5e7cb84a172a0f0007da69e4/colorLogoPNG.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Red Bull TV',
+    ),
+
+    // 85. RT Arabic
+    Channel(
+      id: 'rt_arabic',
+      name: 'RT Arabic',
+      streamUrl: 'https://rt-arb.rttv.com/dvr/rtarab/playlist.m3u8',
+      logoUrl: 'https://i.imgur.com/G8vGrn1.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung RT Arabic',
+    ),
+
+    // 86. CNBC Indonesia
+    Channel(
+      id: 'cnbc_indonesia',
+      name: 'CNBC Indonesia',
+      streamUrl: 'https://video.detik.com/livecnbc/smil:cnbctv/chunklist_w1279679883_b384000_sleng.m3u8',
+      logoUrl: '',
+      category: 'Business',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung CNBC Indonesia',
+    ),
+
+    // 87. CNN Indonesia
+    Channel(
+      id: 'cnn_indonesia',
+      name: 'CNN Indonesia',
+      streamUrl: 'https://video.detik.com/livecnn/smil:cnntv/chunklist_w268557525_b384000_sleng.m3u8',
+      logoUrl: '',
+      category: 'News',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung CNN Indonesia',
+    ),
+
+    // 88. Radar Tasikmalaya TV
+    Channel(
+      id: 'radar_tasikmalaya_tv',
+      name: 'Radar Tasikmalaya TV',
+      streamUrl: 'https://v2.siar.us/radartasikmalaya/live/playlist.m3u8',
+      logoUrl: '',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Radar Tasikmalaya TV',
+    ),
+
+    // 89. SMTV
+    Channel(
+      id: 'smtv',
+      name: 'SMTV',
+      streamUrl: 'https://e.siar.us/live/smtv.m3u8',
+      logoUrl: '',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung SMTV',
+    ),
+
+    // 90. BTV
+    Channel(
+      id: 'btv',
+      name: 'BTV',
+      streamUrl: 'https://hls.tvabierta.net/hls/boliviatv.m3u8',
+      logoUrl: '',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung BTV',
+    ),
+
+    // 91. STV
+    Channel(
+      id: 'stv',
+      name: 'STV',
+      streamUrl: 'http://89.201.163.244:8080/hls/hdmi.m3u8',
+      logoUrl: '',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung STV',
+    ),
+
+    // 92. E International Asia
+    Channel(
+      id: 'e_international_asia_2',
+      name: 'E International Asia',
+      streamUrl: 'https://gist.githubusercontent.com/iptvonlinetv/cf56ccf36d1c0827e4dc470db7b7912d/raw/066b1c9755b2496805575f16d413bd1207ca8117/udp315.520.789:8060.m3u8',
+      logoUrl: 'https://hosting.renderforestsites.com/35126779/1659328/media/1058391c8059a0d092426e145d55951b.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung E International Asia',
+    ),
+
+    // 93. E International Europe
+    Channel(
+      id: 'e_international_europe_2',
+      name: 'E International Europe',
+      streamUrl: 'https://gist.githubusercontent.com/iptvonlinetv/cf56ccf36d1c0827e4dc470db7b7912d/raw/066b1c9755b2496805575f16d413bd1207ca8117/udp120.510.450:6060.m3u8',
+      logoUrl: 'https://hosting.renderforestsites.com/35126779/1659328/media/1058391c8059a0d092426e145d55951b.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung E International Europe',
+    ),
+
+    // 94. Jogja TV
+    Channel(
+      id: 'jogja_tv_2',
+      name: 'Jogja TV',
+      streamUrl: 'https://stream.jogjatv.co.id/jtvlive/stream/index.m3u8',
+      logoUrl: 'https://static.wikia.nocookie.net/logopedia/images/4/40/Jogjatvnew.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Jogja TV',
+    ),
+
+    // 95. Nusantara TV
+    Channel(
+      id: 'nusantara_tv_2',
+      name: 'Nusantara TV',
+      streamUrl: 'https://nusantaratv.siar.us/nusantaratv/live/playlist.m3u8',
+      logoUrl: 'https://i.imgur.com/viun5hj.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Nusantara TV',
+    ),
+
+    // 96. Rinjani TV
+    Channel(
+      id: 'rinjani_tv_2',
+      name: 'Rinjani TV',
+      streamUrl: 'https://rinjanitv.cloud/hls/tvkabel.m3u8',
+      logoUrl: 'https://lombokindustries.com/assunnah/zone/img/rinjanitv.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Rinjani TV',
+    ),
+
+    // 97. Sangaji TV
+    Channel(
+      id: 'sangaji_tv_2',
+      name: 'Sangaji TV',
+      streamUrl: 'https://cdn.adyadigitalteknologi.com:8090/vod/relay.m3u8',
+      logoUrl: 'https://i.imgur.com/4rTNT8F.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Sangaji TV',
+    ),
+
+    // 98. TATV
+    Channel(
+      id: 'tatv_2',
+      name: 'TATV',
+      streamUrl: 'https://v2.siar.us/tatv/live.sdp/playlist.m3u8',
+      logoUrl: 'https://i.imgur.com/1f0EC7t.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung TATV',
+    ),
+
+    // 99. TVRI South Sumatra
+    Channel(
+      id: 'tvri_south_sumatra_2',
+      name: 'TVRI South Sumatra',
+      streamUrl: 'https://ott-balancer.tvri.go.id/live/eds/Sumsel/hls/Sumsel.m3u8',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/TVRILogo2019.svg/960px-TVRILogo2019.svg.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung TVRI South Sumatra',
+    ),
+
+    // 100. U Channel
+    Channel(
+      id: 'u_channel_2',
+      name: 'U Channel',
+      streamUrl: 'https://srs.u-channel.tv/live/uchannel-tv.m3u8',
+      logoUrl: 'https://i.imgur.com/qxkb0cy.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung U Channel',
+    ),
+
+    // 101. UGTV
+    Channel(
+      id: 'ugtv_2',
+      name: 'UGTV',
+      streamUrl: 'https://cdn.gunadarma.ac.id/streams/ugtv/ingestugtv.m3u8',
+      logoUrl: 'https://i.imgur.com/iEKDH26.png',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung UGTV',
+    ),
+
+    // 102. ABC News
+    Channel(
+      id: 'abc_news_2',
+      name: 'ABC News',
+      streamUrl: 'https://abc-news-dmd-streams-1.akamaized.net/out/v1/701126012d044971b3fa89406a440133/index.m3u8',
+      logoUrl: 'https://i.imgur.com/BrW7gk8.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung ABC News',
+    ),
+
+    // 103. Al Jazeera English
+    Channel(
+      id: 'al_jazeera_english_2',
+      name: 'Al Jazeera English',
+      streamUrl: 'https://live-hls-apps-aje-fa.getaj.net/AJE/index.m3u8',
+      logoUrl: 'https://i.imgur.com/7bRVpnu.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Al Jazeera English',
+    ),
+
+    // 104. CNA
+    Channel(
+      id: 'cna_2',
+      name: 'CNA',
+      streamUrl: 'https://live1.mediadesk.al/cnatvlive.m3u8',
+      logoUrl: 'https://codeit.al/wp-content/uploads/2020/08/cna.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung CNA',
+    ),
+
+    // 105. CNN International
+    Channel(
+      id: 'cnn_international_2',
+      name: 'CNN International',
+      streamUrl: 'https://d3bp6dwmpbdajl.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-ury0meh5m4nzm/index.m3u8',
+      logoUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b8/CNN-International-Logo.svg/960px-CNN-International-Logo.svg.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung CNN International',
+    ),
+
+    // 106. Discovery Channel
+    Channel(
+      id: 'discovery_channel_2',
+      name: 'Discovery Channel',
+      streamUrl: 'http://88.212.7.14/live/discovery_hungary/index.m3u8',
+      logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/2019_Discovery_logo.svg/960px-2019_Discovery_logo.svg.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Discovery Channel',
+    ),
+
+    // 107. DW Arabic
+    Channel(
+      id: 'dw_arabic_2',
+      name: 'DW Arabic',
+      streamUrl: 'https://dwamdstream103.akamaized.net/hls/live/2015526/dwstream103/master.m3u8',
+      logoUrl: 'https://i.imgur.com/8MRNFb9.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung DW Arabic',
+    ),
+
+    // 108. DW English
+    Channel(
+      id: 'dw_english_2',
+      name: 'DW English',
+      streamUrl: 'https://amg01644-amg01644c1-amgplt0343.playout.now3.amagi.tv/ts-eu-w1-n2/playlist/amg01644-amg01644c1-amgplt0343/playlist.m3u8',
+      logoUrl: 'https://i.imgur.com/8MRNFb9.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung DW English',
+    ),
+
+    // 109. Euronews
+    Channel(
+      id: 'euronews_2',
+      name: 'Euronews',
+      streamUrl: 'https://cdn-euronews.akamaized.net/live/eds/euronews-pl/26382/index.m3u8',
+      logoUrl: 'https://images-2.rakuten.tv/storage/global-live-channel/translation/artwork/bc84c3b7-6008-4ee3-8f6a-e4bb4365f082-width200-quality90.jpeg',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Euronews',
+    ),
+
+    // 110. France 24
+    Channel(
+      id: 'france_24_2',
+      name: 'France 24',
+      streamUrl: 'https://live.france24.com/hls/live/2037179-b/F24_FR_HI_HLS/master_5000.m3u8',
+      logoUrl: 'https://i.imgur.com/u8N6uoj.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung France 24',
+    ),
+
+    // 111. France 24 Arabic
+    Channel(
+      id: 'france_24_arabic_2',
+      name: 'France 24 Arabic',
+      streamUrl: 'https://live.france24.com/hls/live/2037222-b/F24_AR_HI_HLS/master_5000.m3u8',
+      logoUrl: 'https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_FRANCE_24/images/LOGO_HD/image.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung France 24 Arabic',
+    ),
+
+    // 112. Nasa TV
+    Channel(
+      id: 'nasa_tv_2',
+      name: 'Nasa TV',
+      streamUrl: 'https://stream.nasatv.com.mk/hls/nasatv_live.m3u8',
+      logoUrl: 'https://i.imgur.com/9rB4VZy.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Nasa TV',
+    ),
+
+    // 113. Red Bull TV
+    Channel(
+      id: 'red_bull_tv_2',
+      name: 'Red Bull TV',
+      streamUrl: 'https://3ea22335.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWdiX1JlZEJ1bGxUVl9ITFM/playlist.m3u8',
+      logoUrl: 'https://images.pluto.tv/channels/5e7cb84a172a0f0007da69e4/colorLogoPNG.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Red Bull TV',
+    ),
+
+    // 114. RT Arabic
+    Channel(
+      id: 'rt_arabic_2',
+      name: 'RT Arabic',
+      streamUrl: 'https://rt-arb.rttv.com/dvr/rtarab/playlist.m3u8',
+      logoUrl: 'https://i.imgur.com/G8vGrn1.png',
+      category: 'Internasional',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung RT Arabic',
+    ),
+
+    // 115. CNBC Indonesia
+    Channel(
+      id: 'cnbc_indonesia_2',
+      name: 'CNBC Indonesia',
+      streamUrl: 'https://video.detik.com/livecnbc/smil:cnbctv/chunklist_w1279679883_b384000_sleng.m3u8',
+      logoUrl: '',
+      category: 'Business',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung CNBC Indonesia',
+    ),
+
+    // 116. CNN Indonesia
+    Channel(
+      id: 'cnn_indonesia_2',
+      name: 'CNN Indonesia',
+      streamUrl: 'https://video.detik.com/livecnn/smil:cnntv/chunklist_w268557525_b384000_sleng.m3u8',
+      logoUrl: '',
+      category: 'News',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung CNN Indonesia',
+    ),
+
+    // 117. Radar Tasikmalaya TV
+    Channel(
+      id: 'radar_tasikmalaya_tv_2',
+      name: 'Radar Tasikmalaya TV',
+      streamUrl: 'https://v2.siar.us/radartasikmalaya/live/playlist.m3u8',
+      logoUrl: '',
+      category: 'Umum',
+      type: StreamType.m3u8,
+      description: 'Siaran Langsung Radar Tasikmalaya TV',
+    ),
   ];
+
+  /// Cari kanal berdasarkan id.
+  static Channel? byId(String id) {
+    for (final c in channels) {
+      if (c.id == id) return c;
+    }
+    return null;
+  }
 }

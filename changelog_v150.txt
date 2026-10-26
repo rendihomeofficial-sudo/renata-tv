@@ -1,0 +1,28 @@
+RENATA TV v1.5.0 (version code 6)
+
+YANG BARU
+- Redesain Home Screen: header dengan statistik kanal, pencarian cepat, filter
+  kategori, dan grid kanal yang menyesuaikan lebar layar (2-6 kolom).
+- Kartu kanal bergaya baru: logo kanal, penanda LIVE, tombol favorit, dan state
+  fokus yang tegas untuk navigasi remote D-pad.
+- Pemutar redesigned: mode landscape menampilkan video di kiri dan daftar kanal
+  yang bisa digulir di kanan; mode portrait memakai sheet kanal.
+- Splash screen animasi: logo membesar (easeOutBack), cincin cahaya berdenyut,
+  judul/tagline staggered, dan transisi fade ke Home Screen.
+- Ikon launcher adaptive (Android 8+) plus ikon legacy yang di-render ulang
+  dari sumber app_icon.png.
+- Native splash Android memakai latar gelap + logo, jadi tidak ada kedipan
+  putih saat aplikasi dibuka.
+
+STABILITAS STREAMING
+- Semua URL kanal diverifikasi ulang lewat probe playlist (playlist bisa diakses
+  dan segmen video valid).
+- Kanal dengan beberapa mirror resmi memakai daftar fallbackUrls; pemutar
+  otomatis pindah mirror kalau mirror utama gagal/buffering.
+--Timeout inisialisasi 25 detik + indikator buffering di atas video.
+- Pesan error yang jelas dan tombol coba lagi.
+
+PERBAIKAN
+- 117 kanal siap tonton (nasional, daerah, internasional, religi, berita).
+- 60+ logo kanal tersimpan lokal supaya tampil cepat tanpa jaringan.
+- Ukuran teks dibatasi agar tampilan rapi di HP kecil maupun TV besar.

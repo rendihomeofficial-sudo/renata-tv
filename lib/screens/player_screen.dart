@@ -32,6 +32,16 @@ class _PlayerScreenState extends State<PlayerScreen> {
   /// Pesan error yang tampil di atas area pemutar (bukan null = ada error).
   String? _playerError;
 
+  /// True saat pemutar sedang buffering (bukan sedang memuat pertama kali).
+  bool _isBuffering = false;
+
+  /// Indeks URL yang sedang dicoba dari [Channel.allUrls]. Dipakai untuk
+  /// mencoba mirror berikutnya secara otomatis saat stream utama gagal.
+  int _urlAttempt = 0;
+
+  /// Berapa kali percobaan untuk satu URL yang sama sebelum pindah mirror.
+  static const int _attemptsPerUrl = 2;
+
   // Webview controller
   WebViewController? _webViewController;
 
@@ -41,6 +51,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
   // Native HLS player (video_player + chewie)
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
+
+  /// Listener buffering dari VideoPlayerController.
+  VoidCallback? _bufferingListener;
 
   @override
   void initState() {
@@ -66,6 +79,14 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   /// Buang semua controller yang sedang aktif sebelum membuat pemutar baru.
   void _disposeControllers() {
+    final video = _videoController;
+    final listener = _bufferingListener;
+    if (video != null && listener != null) {
+      video.removeListener(listener);
+    }
+    _bufferingListener = null;
+    _isBuffering = false;
+
     _youtubeController?.dispose();
     _youtubeController = null;
     _chewieController?.dispose();
@@ -77,6 +98,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   void _setupPlayer({bool silent = false}) {
     _disposeControllers();
+    // Mulai lagi dari mirror utama setiap kali kanal dimuat ulang.
+    _urlAttempt = 0;
 
     if (silent) {
       _isLoading = true;
@@ -115,46 +138,98 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   /// Siapkan pemutar video native untuk channel bertipe [StreamType.m3u8]
   /// atau [StreamType.native].
+  ///
+  /// Channel live sering punya beberapa mirror resmi. Fungsi ini mencoba
+  /// URL utama terlebih dahulu, lalu otomatis pindah ke mirror berikutnya
+  /// bila gagal, sehingga menonton tetap lancar walaupun satu mirror
+  /// sedang bermasalah.
   Future<void> _initNativePlayer(Channel channel) async {
-    final Uri uri;
-    try {
-      uri = Uri.parse(channel.streamUrl);
-    } catch (e) {
+    final urls = channel.allUrls;
+    if (urls.isEmpty) {
       _showPlayerError('URL stream tidak valid.');
       return;
     }
 
-    final controller = VideoPlayerController.networkUrl(uri);
-    _videoController = controller;
+    String? lastError;
 
-    try {
-      await controller.initialize();
-      // Pastikan widget masih hidup dan controller ini masih yang dipakai
-      // (pengguna bisa saja sudah pindah channel saat initialization).
-      if (!mounted || _videoController != controller) {
-        await controller.dispose();
-        return;
+    for (int attempt = 0; attempt < _attemptsPerUrl; attempt++) {
+      final urlIndex = _urlAttempt % urls.length;
+      final url = urls[urlIndex];
+
+      final Uri uri;
+      try {
+        uri = Uri.parse(url);
+      } catch (e) {
+        lastError = 'URL stream tidak valid.';
+        break;
       }
 
-      _chewieController = ChewieController(
-        videoPlayerController: controller,
-        autoPlay: true,
-        aspectRatio: 16 / 9,
-        allowFullScreen: false,
-        showControls: true,
-        errorBuilder: (context, error) => _buildErrorState(),
-      );
+      final controller = VideoPlayerController.networkUrl(uri);
+      _videoController = controller;
 
-      _setLoading(false);
-    } catch (e) {
-      debugPrint('Gagal memuat stream HLS: $e');
-      await controller.dispose();
-      if (!mounted) return;
-      if (_videoController == controller) _videoController = null;
-      _showPlayerError(
-        'Tidak dapat memuat stream ini. Periksa koneksi internet Anda lalu coba lagi.',
-      );
+      try {
+        await controller.initialize().timeout(
+              const Duration(seconds: 25),
+            );
+
+        // Pastikan widget masih hidup dan controller ini masih yang dipakai
+        // (pengguna bisa saja sudah pindah channel saat initialization).
+        if (!mounted || _videoController != controller) {
+          await controller.dispose();
+          return;
+        }
+
+        _attachBufferingListener(controller);
+
+        _chewieController = ChewieController(
+          videoPlayerController: controller,
+          autoPlay: true,
+          aspectRatio: 16 / 9,
+          allowFullScreen: false,
+          showControls: true,
+          errorBuilder: (context, error) => _buildErrorState(),
+        );
+
+        _setLoading(false);
+        return;
+      } catch (e) {
+        debugPrint('Gagal memuat stream HLS ($url): $e');
+        lastError = e.toString();
+        await controller.dispose();
+        if (!mounted) return;
+        if (_videoController == controller) _videoController = null;
+      }
     }
+
+    // Semua percobaan pada URL ini gagal -> pindah ke mirror berikutnya.
+    if (_urlAttempt + 1 < urls.length) {
+      _urlAttempt++;
+      if (mounted) {
+        setState(() => _playerError = null);
+      }
+      await _initNativePlayer(channel);
+      return;
+    }
+
+    if (!mounted) return;
+    debugPrint('Error terakhir: $lastError');
+    _showPlayerError(
+      'Tidak dapat memuat stream ini dari ${urls.length} mirror. Periksa '
+      'koneksi internet Anda lalu coba lagi.',
+    );
+  }
+
+  /// Pantau status buffering dari pemutar native supaya indikator
+  /// "buffering" bisa ditampilkan di atas video.
+  void _attachBufferingListener(VideoPlayerController controller) {
+    _bufferingListener = () {
+      if (!mounted) return;
+      final buffering = controller.value.isBuffering;
+      if (buffering != _isBuffering) {
+        setState(() => _isBuffering = buffering);
+      }
+    };
+    controller.addListener(_bufferingListener!);
   }
 
   /// Siapkan WebView untuk channel embed (Detik, RCTI+, CNN, TVRI, dll).
@@ -253,6 +328,12 @@ class _PlayerScreenState extends State<PlayerScreen> {
   @override
   void dispose() {
     WakelockPlus.disable();
+    final video = _videoController;
+    final listener = _bufferingListener;
+    if (video != null && listener != null) {
+      video.removeListener(listener);
+    }
+    _bufferingListener = null;
     _youtubeController?.dispose();
     _chewieController?.dispose();
     _videoController?.dispose();
@@ -407,7 +488,14 @@ class _PlayerScreenState extends State<PlayerScreen> {
             ),
           ],
         ),
-        body: Column(
+        body: OrientationBuilder(
+          builder: (context, orientation) {
+            // Di mode landscape, video tampil besar di kiri dan daftar kanal
+            // pindah ke panel samping supaya tidak menutupi layar.
+            if (orientation == Orientation.landscape) {
+              return _buildLandscapeBody();
+            }
+            return Column(
           children: [
             // Screen Player Container
             AspectRatio(
@@ -572,8 +660,125 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 },
               ),
             ),
-          ],
+            ],
+          );
+        },
+      ),
+    ),
+    );
+  }
+
+  /// Tampilan landscape: video memenuhi tinggi layar, daftar kanal di
+  /// panel kanan yang bisa digulir.
+  Widget _buildLandscapeBody() {
+    return Row(
+      children: [
+        Expanded(
+          child: Stack(
+            children: [
+              Positioned.fill(child: _buildPlayerView()),
+              Positioned(
+                bottom: 8,
+                right: 8,
+                child: _buildFullScreenButton(),
+              ),
+            ],
+          ),
         ),
+        Container(
+          width: 200,
+          color: const Color(0xFF14171F),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+                child: Row(
+                  children: [
+                    const Icon(Icons.live_tv_rounded,
+                        color: Colors.redAccent, size: 16),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Kanal (${widget.allChannels.length})',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: widget.allChannels.length,
+                  itemBuilder: (context, index) {
+                    final ch = widget.allChannels[index];
+                    final isSelected = ch.id == _currentChannel.id;
+                    return ListTile(
+                      dense: true,
+                      selected: isSelected,
+                      selectedTileColor: Colors.redAccent.withOpacity(0.15),
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          color: Colors.white,
+                          padding: const EdgeInsets.all(3),
+                          child: ch.logoUrl.isNotEmpty
+                              ? (ch.logoUrl.startsWith('assets/')
+                                  ? Image.asset(
+                                      ch.logoUrl,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (_, __, ___) => const Icon(
+                                          Icons.tv, color: Colors.black38),
+                                    )
+                                  : Image.network(
+                                      ch.logoUrl,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (_, __, ___) => const Icon(
+                                          Icons.tv, color: Colors.black38),
+                                    ))
+                              : const Icon(Icons.tv, color: Colors.black38),
+                        ),
+                      ),
+                      title: Text(
+                        ch.name,
+                        style: TextStyle(
+                          color: isSelected ? Colors.redAccent : Colors.white,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onTap: () => _switchChannel(ch),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Tombol masuk layar penuh yang dipakai di mode landscape.
+  Widget _buildFullScreenButton() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black54,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: IconButton(
+        icon: const Icon(Icons.fullscreen_rounded, color: Colors.white, size: 24),
+        tooltip: 'Layar Penuh (Landscape)',
+        onPressed: _toggleFullScreen,
       ),
     );
   }
@@ -629,6 +834,24 @@ class _PlayerScreenState extends State<PlayerScreen> {
             ),
 
           if (_playerError != null) _buildErrorState(),
+
+          // Indikator buffering: tampil ketika stream sudah siap tetapi
+          // data video belum sampai (jaringan lambat).
+          if (_isBuffering && !_isLoading && _playerError == null)
+            Container(
+              color: Colors.black26,
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: Colors.redAccent),
+                    SizedBox(height: 10),
+                    Text('Meny buffering...',
+                        style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  ],
+                ),
+              ),
+            ),
 
           if (_isLoading)
             Container(

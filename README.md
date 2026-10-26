@@ -2,6 +2,17 @@
 
 Aplikasi Android Native (**Flutter**) khusus smartphone, tablet, dan Smart TV Box untuk menonton live streaming siaran televisi Indonesia secara langsung dan stabil.
 
+**Versi terbaru: v1.5.0 (version code 6)**
+
+## ✨ Yang Baru di v1.5.0
+
+- **Tampilan didesain ulang**: Home Screen baru (header statistik, pencarian cepat, filter kategori, grid responsif 2-6 kolom), kartu kanal bergaya modern dengan penanda LIVE, dan pemutar dengan daftar kanal di samping video pada mode landscape.
+- **Splash screen animasi**: logo membesar (easeOutBack), cincin cahaya berdenyut, judul/tagline staggered, transisi fade ke Home Screen.
+- **Native splash Android** memakai latar gelap + logo aplikasi, jadi tidak ada kedipan putih saat aplikasi dibuka.
+- **Ikon launcher adaptive** (Android 8+) plus ikon legacy yang di-render ulang dari sumber `assets/icons/app_icon.png`.
+- **117 kanal** siap tonton dengan URL yang sudah diverifikasi ulang lewat probe playlist.
+- **Mirror otomatis**: kanal dengan beberapa mirror resmi memakai `fallbackUrls`; pemutar otomatis pindah ke mirror lain bila mirror utama gagal.
+
 ---
 
 ## 🌟 Fitur Utama

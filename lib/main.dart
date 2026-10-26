@@ -1,15 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import 'screens/splash_screen.dart';
+import 'theme/app_theme.dart';
 import 'widgets/offline_banner.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Aplikasi mendukung portrait maupun landscape. Library tidak dikunci
+  // supaya pengguna bebas memutar HP saat menonton.
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
+
+  // Tampilan tepi-ke-tepi supaya konten memakai seluruh layar, termasuk
+  // di mode landscape pada layar yang panjang/tinggi.
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
 
   runApp(const RenataTVApp());
 }
@@ -23,24 +41,21 @@ class RenataTVApp extends StatelessWidget {
       title: 'RENATA TV',
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.dark,
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF10131A),
-        primaryColor: const Color(0xFFE11D48),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFE11D48),
-          secondary: Color(0xFFF59E0B),
-          surface: Color(0xFF1A1D27),
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF141721),
-          elevation: 0,
-        ),
-        useMaterial3: true,
-      ),
+      darkTheme: AppTheme.dark,
       builder: (context, child) {
-        return OfflineBannerWrapper(
-          child: child ?? const SizedBox.shrink(),
+        // Batasi skala teks agar tampilan tetap rapi di HP kecil maupun
+        // tablet/TV besar, tanpa membuat teks_small市场份额 tidak terbaca.
+        final mediaQuery = MediaQuery.of(context);
+        return MediaQuery(
+          data: mediaQuery.copyWith(
+            textScaler: mediaQuery.textScaler.clamp(
+              minScaleFactor: 0.9,
+              maxScaleFactor: 1.3,
+            ),
+          ),
+          child: OfflineBannerWrapper(
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
       home: const SplashScreen(),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/channel_service.dart';
 import '../services/favorites_service.dart';
+import '../theme/app_theme.dart';
 
 class SettingsScreen extends StatefulWidget {
   final Function(String url) onPlaylistLoaded;
@@ -118,10 +119,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF12141A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1D24),
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.background,
+        foregroundColor: AppColors.textPrimary,
         title: const Text('Pengaturan & Playlist IPTV'),
       ),
       body: ListView(
@@ -131,18 +132,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.blueAccent.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
+              color: AppColors.accent.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: AppColors.accent.withOpacity(0.28)),
             ),
             child: const Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.blueAccent, size: 28),
+                Icon(Icons.info_outline_rounded, color: AppColors.accent, size: 26),
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Anda dapat menambahkan link playlist M3U/M3U8 eksternal untuk memperluas daftar channel TV.',
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                   ),
                 ),
               ],
@@ -154,27 +155,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Text(
             'Custom Playlist M3U URL',
             style: TextStyle(
-              color: Colors.white,
+              color: AppColors.textPrimary,
               fontSize: 16,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 8),
 
           TextField(
             controller: _urlController,
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: AppColors.textPrimary),
+            keyboardType: TextInputType.url,
             decoration: InputDecoration(
               hintText: 'https://example.com/playlist.m3u',
-              hintStyle: const TextStyle(color: Colors.white38),
-              filled: true,
-              fillColor: const Color(0xFF1E222A),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide.none,
-              ),
+              hintStyle: const TextStyle(color: AppColors.textMuted),
+              prefixIcon: const Icon(Icons.link_rounded, color: AppColors.textMuted),
               suffixIcon: IconButton(
-                icon: const Icon(Icons.clear, color: Colors.white54),
+                icon: const Icon(Icons.clear_rounded, color: AppColors.textMuted),
                 onPressed: () => _urlController.clear(),
               ),
             ),
@@ -182,13 +179,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 16),
 
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
             ),
             onPressed: _isLoading ? null : _testAndSavePlaylist,
@@ -209,8 +206,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: TextStyle(
                 color: (_statusMessage!.startsWith('Berhasil') ||
                         _statusMessage!.contains('dihapus'))
-                    ? Colors.greenAccent
-                    : Colors.orangeAccent,
+                    ? AppColors.success
+                    : AppColors.warning,
                 fontSize: 13,
               ),
               textAlign: TextAlign.center,
@@ -224,11 +221,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: const Icon(Icons.delete_outline_rounded),
               label: const Text('Hapus Playlist Kustom & Kembali ke Daftar Bawaan'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.redAccent,
-                side: const BorderSide(color: Colors.redAccent),
+                foregroundColor: AppColors.primaryLight,
+                side: const BorderSide(color: AppColors.primary),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
               ),
             ),
@@ -236,14 +233,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 32),
 
-          const Divider(color: Colors.white12),
+          const Divider(color: AppColors.border),
 
           const SizedBox(height: 16),
 
           const Text(
             'Rekomendasi Sumber Playlist Legal IPTV:',
             style: TextStyle(
-              color: Colors.white,
+              color: AppColors.textPrimary,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -251,21 +248,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 8),
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.public, color: Colors.redAccent),
-            title: const Text('IPTV-ORG Indonesia', style: TextStyle(color: Colors.white, fontSize: 13)),
-            subtitle: const Text('https://iptv-org.github.io/iptv/countries/id.m3u', style: TextStyle(color: Colors.white54, fontSize: 11)),
+            leading: const Icon(Icons.public_rounded, color: AppColors.primaryLight),
+            title: const Text('IPTV-ORG Indonesia', style: TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+            subtitle: const Text('https://iptv-org.github.io/iptv/countries/id.m3u', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
             onTap: () {
               _urlController.text = 'https://iptv-org.github.io/iptv/countries/id.m3u';
             },
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.language, color: Colors.blueAccent),
-            title: const Text('IPTV-ORG Global News', style: TextStyle(color: Colors.white, fontSize: 13)),
-            subtitle: const Text('https://iptv-org.github.io/iptv/categories/news.m3u', style: TextStyle(color: Colors.white54, fontSize: 11)),
+            leading: const Icon(Icons.language_rounded, color: AppColors.accent),
+            title: const Text('IPTV-ORG Global News', style: TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+            subtitle: const Text('https://iptv-org.github.io/iptv/categories/news.m3u', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
             onTap: () {
               _urlController.text = 'https://iptv-org.github.io/iptv/categories/news.m3u';
             },
+          ),
+
+          const SizedBox(height: 24),
+
+          // Kartu informasi aplikasi.
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Row(
+                  children: [
+                    Icon(Icons.verified_rounded, color: AppColors.success, size: 18),
+                    SizedBox(width: 8),
+                    Text(
+                      'Tentang RENATA TV',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Aplikasi pemutar TV gratis. Semua kanal memakai URL resmi '
+                  'broadcaster atau mirror publik yang telah diuji. '
+                  'Tidak ada akun, tidak ada langganan, dan tidak ada iklan '
+                  'dari kami.',
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12.5, height: 1.5),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          const Center(
+            child: Text(
+              'RENATA TV · Versi 1.5.0',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+            ),
           ),
         ],
       ),

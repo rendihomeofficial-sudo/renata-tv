@@ -3,6 +3,7 @@ import '../models/channel.dart';
 import '../services/auto_update_service.dart';
 import '../services/channel_service.dart';
 import '../services/favorites_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/channel_card.dart';
 import '../widgets/update_badge.dart';
 import 'player_screen.dart';
@@ -176,6 +177,57 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Kartu statistik kecil pada header Home Screen.
+  Widget _buildStatPill({
+    required IconData icon,
+    required String value,
+    required String label,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 16, color: AppColors.primaryLight),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      height: 1.1,
+                    ),
+                  ),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _openSettings() {
     Navigator.push(
       context,
@@ -194,12 +246,46 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Strip ringkasan di atas daftar kanal: jumlah kanal, jumlah kategori,
+  /// dan jumlah channel yang sedang ditampilkan.
+  Widget _buildStatsStrip() {
+    final total = _allChannels.length;
+    final shown = _filteredChannels.length;
+    final categoryCount =
+        (_categories.where((c) => c != 'Semua' && c != 'Favorit')).length;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Row(
+        children: [
+          _buildStatPill(
+            icon: Icons.live_tv_rounded,
+            value: '$total',
+            label: 'Kanal',
+          ),
+          const SizedBox(width: 8),
+          _buildStatPill(
+            icon: Icons.category_rounded,
+            value: '$categoryCount',
+            label: 'Kategori',
+          ),
+          const SizedBox(width: 8),
+          _buildStatPill(
+            icon: Icons.filter_alt_rounded,
+            value: '$shown',
+            label: 'Ditampilkan',
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF10131A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF171A24),
+        backgroundColor: AppColors.background,
         elevation: 0,
         title: Row(
           children: [
@@ -208,55 +294,65 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
+                gradient: AppColors.brandGradient,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.redAccent.withOpacity(0.3),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
+                    color: AppColors.primary.withOpacity(0.35),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
                   )
                 ],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
                 child: Image.asset(
                   'assets/icons/app_icon.png',
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
-                    color: Colors.redAccent,
+                    color: AppColors.primary,
                     child: const Icon(Icons.live_tv, color: Colors.white, size: 22),
                   ),
                 ),
               ),
             ),
             const SizedBox(width: 12),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'RENATA TV',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.8,
-                    fontSize: 17,
+            // Expanded supaya judul tetap muat di HP sempit. Tanpa itu,
+            // teks subtitle membuat baris AppBar meluber ke luar layar.
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'RENATA TV',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                      fontSize: 17,
+                    ),
                   ),
-                ),
-                Text(
-                  'Live Streaming Siaran TV Indonesia',
-                  style: TextStyle(
-                    color: Colors.white54,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w400,
+                  Text(
+                    'Live Streaming Siaran TV Indonesia',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_rounded, color: Colors.white70),
+            icon: const Icon(Icons.settings_rounded, color: AppColors.textSecondary),
             tooltip: 'Playlist & Pengaturan',
             onPressed: _openSettings,
           ),
@@ -267,8 +363,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 Icon(
                   Icons.system_update_rounded,
                   color: _availableUpdate != null
-                      ? Colors.redAccent
-                      : Colors.amberAccent,
+                      ? AppColors.primaryLight
+                      : AppColors.textSecondary,
                 ),
                 // Titik merah penanda bahwa ada versi baru yang tersedia.
                 if (_availableUpdate != null)
@@ -280,9 +376,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: 9,
                       height: 9,
                       decoration: BoxDecoration(
-                        color: Colors.redAccent,
+                        color: AppColors.primaryLight,
                         shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF171A24), width: 1.5),
+                        border: Border.all(color: AppColors.background, width: 1.5),
                       ),
                     ),
                   ),
@@ -348,19 +444,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
             ),
 
+            // Ringkasan singkat jumlah kanal & kategori.
+            _buildStatsStrip(),
+
             // Kotak Pencarian Channel
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
               child: TextField(
                 controller: _searchController,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppColors.textPrimary),
                 decoration: InputDecoration(
                   hintText: 'Cari siaran (Trans TV, Metro, Net TV, dsb)...',
-                  hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
-                  prefixIcon: const Icon(Icons.search, color: Colors.white38),
+                  hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                  prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white38),
+                          icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
                           onPressed: () {
                             _searchController.clear();
                             setState(() => _searchQuery = '');
@@ -369,11 +468,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         )
                       : null,
                   filled: true,
-                  fillColor: const Color(0xFF1B1E28),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                  fillColor: AppColors.surface,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    borderSide: const BorderSide(color: AppColors.border),
                   ),
                 ),
                 onChanged: (val) {
@@ -392,29 +491,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemCount: _categories.length,
                 itemBuilder: (context, index) {
                   final cat = _categories[index];
-                  final isSelected = cat == _selectedCategory;
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: ChoiceChip(
-                      label: Text(cat),
-                      selected: isSelected,
-                      selectedColor: Colors.redAccent,
-                      backgroundColor: const Color(0xFF1B1E28),
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : Colors.white70,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        fontSize: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        side: BorderSide(
-                          color: isSelected ? Colors.redAccent : Colors.white12,
+                  final isSelected = cat == _selectedCategory;                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: ChoiceChip(
+                        label: Text(cat),
+                        selected: isSelected,
+                        selectedColor: AppColors.primary,
+                        backgroundColor: AppColors.surface,
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : AppColors.textSecondary,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          fontSize: 12,
                         ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                          side: BorderSide(
+                            color: isSelected ? AppColors.primary : AppColors.border,
+                          ),
+                        ),
+                        onSelected: (_) => _onCategorySelected(cat),
                       ),
-                      onSelected: (_) => _onCategorySelected(cat),
-                    ),
-                  );
+                    );
                 },
               ),
             ),
@@ -425,7 +522,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: _isLoading
                   ? const Center(
-                      child: CircularProgressIndicator(color: Colors.redAccent),
+                      child: CircularProgressIndicator(color: AppColors.primary),
                     )
                   : _filteredChannels.isEmpty
                       ? Center(
@@ -434,17 +531,24 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               Icon(
                                 _selectedCategory == 'Favorit'
-                                    ? Icons.favorite_border
-                                    : Icons.tv_off,
-                                size: 52,
-                                color: Colors.white24,
+                                    ? Icons.favorite_border_rounded
+                                    : Icons.live_tv_rounded,
+                                size: 54,
+                                color: AppColors.textMuted,
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 14),
                               Text(
                                 _selectedCategory == 'Favorit'
                                     ? 'Belum ada channel favorit'
                                     : 'Channel tidak ditemukan',
-                                style: const TextStyle(color: Colors.white60, fontSize: 14),
+                                style: const TextStyle(
+                                    color: AppColors.textSecondary, fontSize: 14),
+                              ),
+                              const SizedBox(height: 6),
+                              const Text(
+                                'Coba kategori lain atau gunakan kolom pencarian.',
+                                style: TextStyle(
+                                    color: AppColors.textMuted, fontSize: 12),
                               ),
                             ],
                           ),
@@ -454,13 +558,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             final crossAxisCount =
                                 _crossAxisCountFor(constraints.maxWidth);
                             return GridView.builder(
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: crossAxisCount,
-                                childAspectRatio: 1.15,
-                                crossAxisSpacing: 10,
-                                mainAxisSpacing: 10,
+                                childAspectRatio: 0.92,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
                               ),
                               itemCount: _filteredChannels.length,
                               itemBuilder: (context, index) {

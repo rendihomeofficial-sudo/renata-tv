@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Warna latar ikon adaptive: senada dengan AppColors.background (#0B0E14). -->
+    <color name="ic_launcher_background">#0B0E14</color>
+    <!-- Warna latar splash native sebelum frame Flutter pertama digambar. -->
+    <color name="splash_background">#0B0E14</color>
+</resources>
