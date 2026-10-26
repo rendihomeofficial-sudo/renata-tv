@@ -2,12 +2,17 @@
 //
 // Menguji 4 hal yang dipakai AutoUpdateService di aplikasi:
 //   1. version.json diambil dari repo GitHub dan isinya valid.
-//   2. checkForUpdate() menemukan pembaruan saat aplikasi masih v1.1.0 (code 2).
+//   2. checkForUpdate() menemukan pembaruan saat aplikasi terpasang versi lama.
 //   3. APK rilis bisa diunduh lewat Dio (library yang dipakai aplikasi).
 //   4. Dialog pembaruan menampilkan versi + catatan rilis yang benar.
 //
 // Catatan: test ini memakai jaringan sungguhan (raw.githubusercontent.com dan
 // GitHub Releases), jadi butuh koneksi internet.
+//
+// Penting: test ini SENGAJA tidak meng-hardcode nomor versi. Data versi
+// dibaca dari endpoint publik, sehingga rilis baru berikutnya tidak membuat
+// test ini gagal. Golden dialog memakai data versi tetap supaya gambar
+// golden tidak berubah setiap kali ada rilis baru.
 
 import 'dart:convert';
 import 'dart:io';
@@ -36,7 +41,7 @@ void mockInstalledBuildNumber(String buildNumber) {
         return <String, dynamic>{
           'appName': 'RENATA TV',
           'packageName': 'com.renata.tv',
-          'version': '1.1.0',
+          'version': '1.0.0',
           'buildNumber': buildNumber,
           'buildSignature': '',
         };
@@ -64,6 +69,28 @@ Future<void> loadRealFont() async {
   }
 }
 
+/// Data versi tetap untuk golden dialog (tidak bergantung jaringan).
+UpdateInfo goldenUpdateInfo() {
+  return UpdateInfo(
+    latestVersionCode: 5,
+    latestVersionName: '1.4.0',
+    apkDownloadUrl:
+        'https://github.com/rendihomeofficial-sudo/renata-tv/releases/download/v1.4.0/renata-tv-v1.4.0.apk',
+    changelog: 'Pembaruan RENATA TV v1.4.0:\n'
+        '1. 96 kanal TV Indonesia tambahan yang bisa ditonton langsung.\n'
+        '2. Logo kanal disimpan lokal supaya cepat tampil.',
+  );
+}
+
+/// Ambil data rilis publik yang sedang aktif.
+Future<UpdateInfo> fetchPublishedUpdateInfo() async {
+  final response =
+      await http.get(Uri.parse(AutoUpdateService.updateJsonUrl));
+  expect(response.statusCode, 200);
+  return UpdateInfo.fromJson(
+      Map<String, dynamic>.from(jsonDecode(response.body) as Map));
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -72,31 +99,35 @@ void main() {
   tearDown(enableRealHttp);
 
   group('Cek versi.json', () {
-    test('endpoint versi publik mengembalikan data rilis v1.2.0 yang valid',
+    test('endpoint versi publik mengembalikan data rilis yang valid',
         () async {
-      final response = await http.get(Uri.parse(AutoUpdateService.updateJsonUrl));
-      expect(response.statusCode, 200);
+      final info = await fetchPublishedUpdateInfo();
 
-      final info = UpdateInfo.fromJson(
-          Map<String, dynamic>.from(jsonDecode(response.body) as Map));
-
-      expect(info.latestVersionCode, 3);
-      expect(info.latestVersionName, '1.2.0');
+      expect(info.latestVersionCode, greaterThan(0));
+      expect(info.latestVersionName, isNotEmpty);
       expect(info.forceUpdate, isFalse);
-      expect(info.changelog, contains('SplashScreen'));
-      expect(info.apkDownloadUrl,
-          'https://github.com/rendihomeofficial-sudo/renata-tv/releases/download/v1.2.0/renata-tv-v1.2.0.apk');
+      expect(info.changelog, isNotEmpty);
+
+      // Tautan download harus menunjuk ke tag rilis yang cocok dengan versi.
+      expect(
+        info.apkDownloadUrl,
+        contains('/releases/download/v${info.latestVersionName}/'),
+      );
+      expect(info.apkDownloadUrl, endsWith('.apk'));
     });
 
-    test('checkForUpdate menemukan pembaruan saat aplikasi masih v1.1.0 (code 2)',
+    test('checkForUpdate menemukan pembaruan saat aplikasi masih versi lama',
         () async {
-      mockInstalledBuildNumber('2');
+      final published = await fetchPublishedUpdateInfo();
 
-      final updateInfo = await AutoUpdateService.checkForUpdate();
+      // Aplikasi terpasang disimulasikan memakai kode versi paling rendah.
+      mockInstalledBuildNumber('1');
+
+      final updateInfo = await AutoUpdateService.checkForUpdate(force: true);
 
       expect(updateInfo, isNotNull);
-      expect(updateInfo!.latestVersionCode, 3);
-      expect(updateInfo.latestVersionName, '1.2.0');
+      expect(updateInfo!.latestVersionCode, published.latestVersionCode);
+      expect(updateInfo.latestVersionName, published.latestVersionName);
       expect(updateInfo.apkDownloadUrl, isNotEmpty);
     });
   });
@@ -104,20 +135,23 @@ void main() {
   group('Unduh APK', () {
     test('Dio bisa mengunduh APK rilis sampai lengkap dengan ukuran benar',
         () async {
-      final updateInfo = await AutoUpdateService.checkForUpdate();
-      expect(updateInfo, isNotNull);
+      final published = await fetchPublishedUpdateInfo();
 
       final dio = Dio();
       final dir = Directory.systemTemp.createTempSync('renata_tv_update_test');
       final target = '${dir.path}/renata_tv_update.apk';
 
-      await dio.download(updateInfo!.apkDownloadUrl, target);
+      await dio.download(published.apkDownloadUrl, target);
 
-      final size = File(target).lengthSync();
-      expect(size, 28587935);
+      final file = File(target);
+      expect(file.existsSync(), isTrue);
+
+      final size = file.lengthSync();
+      // APK rilis selalu berukuran puluhan MB; sanity check minimal 1 MB.
+      expect(size, greaterThan(1024 * 1024));
 
       // Berkas yang terunduh harus APK Android yang sah (arsip ZIP).
-      final handle = File(target).openSync();
+      final handle = file.openSync();
       final header = handle.readSync(2);
       handle.closeSync();
       expect(header[0], 0x50); // 'P'
@@ -131,13 +165,12 @@ void main() {
     testWidgets('menampilkan versi baru, catatan rilis, dan tombol aksi',
         (tester) async {
       await loadRealFont();
-      mockInstalledBuildNumber('2');
 
       // Data diambil di luar widget test supaya tidak ada request jaringan
       // di dalam fake async (testWidgets memakai jam palsu).
       UpdateInfo? updateInfo;
       await tester.runAsync(() async {
-        updateInfo = await AutoUpdateService.checkForUpdate();
+        updateInfo = await fetchPublishedUpdateInfo();
       });
       expect(updateInfo, isNotNull);
       final UpdateInfo info = updateInfo!;
@@ -172,16 +205,50 @@ void main() {
       // Judul dialog
       expect(find.text('Pembaruan RENATA TV'), findsOneWidget);
       // Versi baru
-      expect(find.text('Versi Baru: v1.2.0'), findsOneWidget);
+      expect(find.text('Versi Baru: v${info.latestVersionName}'),
+          findsOneWidget);
       // Catatan rilis
-      expect(find.textContaining('SplashScreen'), findsOneWidget);
+      expect(find.textContaining(info.latestVersionName), findsWidgets);
       // Tombol aksi
       expect(find.text('Nanti Saja'), findsOneWidget);
       expect(find.text('Update Otomatis'), findsOneWidget);
+    });
+
+    testWidgets('tampilan dialog sesuai golden', (tester) async {
+      await loadRealFont();
+      final info = goldenUpdateInfo();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(
+            brightness: Brightness.dark,
+            fontFamily: 'Roboto',
+            colorScheme: const ColorScheme.dark(
+              primary: Color(0xFFE11D48),
+              secondary: Color(0xFFF59E0B),
+              surface: Color(0xFF1A1D27),
+            ),
+          ),
+          home: Builder(
+            builder: (context) => Scaffold(
+              backgroundColor: const Color(0xFF10131A),
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () => AutoUpdateService.showUpdateDialog(context, info),
+                  child: const Text('Buka Dialog Update'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Buka Dialog Update'));
+      await tester.pumpAndSettle();
 
       await expectLater(
         find.byType(AlertDialog),
-        matchesGoldenFile('goldens/update_dialog_v1.2.0.png'),
+        matchesGoldenFile('goldens/update_dialog.png'),
       );
     });
   });

@@ -1,7 +1,7 @@
 {
-  "latestVersionCode": 4,
-  "latestVersionName": "1.3.0",
-  "apkDownloadUrl": "https://github.com/rendihomeofficial-sudo/renata-tv/releases/download/v1.3.0/renata-tv-v1.3.0.apk",
-  "changelog": "Pembaruan RENATA TV v1.3.0:\n1. Dukungan playlist M3U kustom: deteksi otomatis tipe stream (HLS, MP4/MKV, WebView).\n2. Tombol hapus playlist kustom di Pengaturan untuk kembali ke daftar channel bawaan.\n3. Pemutar video native untuk berkas progresif, lebih ringan daripada WebView.\n4. Tombol favorit channel kini bisa diakses lewat remote TV (tombol F) dan indikator fokus lebih jelas.\n5. Pemeriksaan pembaruan lebih hemat data: dilewati saat offline, hasil di-cache 10 menit, dialog tidak muncul otomatis jika pernah ditolak.\n6. Pemantauan koneksi internet adjusted (interval 30 detik) dan indikator offline lebih informatif.",
+  "latestVersionCode": 5,
+  "latestVersionName": "1.4.0",
+  "apkDownloadUrl": "https://github.com/rendihomeofficial-sudo/renata-tv/releases/download/v1.4.0/renata-tv-v1.4.0.apk",
+  "changelog": "Pembaruan RENATA TV v1.4.0:\n1. 96 kanal TV Indonesia tambahan yang bisa ditonton langsung (HLS), mulai dari TVRI daerah, RCTI+, Trans TV, Indosiar, sampai kanal berita dan daerah.\n2. Semua logo kanal baru disimpan lokal di dalam aplikasi supaya tampil cepat tanpa buffering.\n3. Kanal HLS kini digabung otomatis dengan daftar channel bawaan, jadi semua kanal bisa dicari lewat pencarian yang sama.\n4. Kategori kanal diperluas agar mudah menemukan kanal berita, hiburan, religi, dan daerah.\n5. Perbaikan tampilan badge \"Pembaruan Tersedia\" dan dialog pembaruan.",
   "forceUpdate": false
 }

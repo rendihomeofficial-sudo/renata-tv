@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../data/hls_channels.dart';
 import '../models/channel.dart';
 
 class ChannelService {
@@ -179,8 +180,10 @@ class ChannelService {
     ),
   ];
 
+  /// Kanal bawaan aplikasi: kanal utama (webview/youtube) ditambah kanal
+  /// HLS regional yang stream-nya sudah diverifikasi.
   static List<Channel> getChannels() {
-    return List.from(channels);
+    return [...channels, ...HlsChannels.channels];
   }
 
   static List<String> getCategories(List<Channel> channelList) {
