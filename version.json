@@ -1,7 +1,7 @@
 {
-  "latestVersionCode": 5,
-  "latestVersionName": "1.4.0",
-  "apkDownloadUrl": "https://github.com/rendihomeofficial-sudo/renata-tv/releases/download/v1.4.0/renata-tv-v1.4.0.apk",
-  "changelog": "Pembaruan RENATA TV v1.4.0:\n1. 96 kanal TV Indonesia tambahan yang bisa ditonton langsung (HLS), mulai dari TVRI daerah, RCTI+, Trans TV, Indosiar, sampai kanal berita dan daerah.\n2. Semua logo kanal baru disimpan lokal di dalam aplikasi supaya tampil cepat tanpa buffering.\n3. Kanal HLS kini digabung otomatis dengan daftar channel bawaan, jadi semua kanal bisa dicari lewat pencarian yang sama.\n4. Kategori kanal diperluas agar mudah menemukan kanal berita, hiburan, religi, dan daerah.\n5. Perbaikan tampilan badge \"Pembaruan Tersedia\" dan dialog pembaruan.",
+  "latestVersionCode": 6,
+  "latestVersionName": "1.5.0",
+  "apkDownloadUrl": "https://github.com/rendihomeofficial-sudo/renata-tv/releases/download/v1.5.0/renata-tv-v1.5.0.apk",
+  "changelog": "Redesain tampilan: Home Screen baru dengan pencarian & kategori, kartu kanal bergaya modern, pemutar landscape dengan daftar kanal di samping video, splash screen animasi, ikon launcher adaptive, dan mirror otomatis (fallback URL) untuk link streaming yang lebih stabil.",
   "forceUpdate": false
 }
