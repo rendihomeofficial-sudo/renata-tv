@@ -135,18 +135,14 @@ class ChannelService {
       description: 'Liputan6 SCTV Berita Terkini & Tajam',
     ),
 
-    // 12. TVRI NASIONAL
-    Channel(
-      id: 'tvri',
-      name: 'TVRI',
-      streamUrl: 'https://klik.tvri.go.id/detailchannel/TVRI_CH_17',
-      logoUrl: 'assets/logos/tvri.png',
-      category: 'Nasional',
-      type: StreamType.webview,
-      description: 'Televisi Republik Indonesia Saluran Pemersatu Bangsa',
-    ),
+    // Catatan: kanal TVRI tidak lagi ada di daftar webview.
+    // TVRI_CH_17 ternyata menunjuk TVRI Lampung, bukan TVRI Nasional, dan
+    // kanal aslinya sudah tersedia sebagai HLS native ("TVRI Nasional" +
+    // seluruh kanal regional) di lib/data/hls_channels.dart. Mempertahankan
+    // entri webview hanya membuat pengguna melihat dua kanal TVRI yang
+    // isinya berbeda.
 
-    // 13. GTV
+    // 12. GTV
     Channel(
       id: 'gtv',
       name: 'GTV',
@@ -157,7 +153,7 @@ class ChannelService {
       description: 'GTV Pilihan Terbaik Keluarga Indonesia',
     ),
 
-    // 14. MNCTV
+    // 13. MNCTV
     Channel(
       id: 'mnctv',
       name: 'MNCTV',
@@ -168,7 +164,7 @@ class ChannelService {
       description: 'Selalu di Hati - MNCTV',
     ),
 
-    // 15. IDX TV (INDONESIA STOCK EXCHANGE)
+    // 14. IDX TV (INDONESIA STOCK EXCHANGE)
     Channel(
       id: 'idxtv',
       name: 'IDX TV',

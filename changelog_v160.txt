@@ -1,0 +1,44 @@
+RENATA TV v1.6.0 (version code 7)
+
+YANG BARU
+- Desain premium baru di seluruh aplikasi: tema gelap berlapis (biru-arang
+  safir + aksen emas), panel kaca (glass), dan bayangan lembut yang lebih
+  halus di Home Screen, kartu kanal, banner offline, badge pembaruan, dan
+  pemutar.
+- Panel hero di Home Screen: posisi aplikasi, lencana PREMIUM, dan ringkasan
+  cepat jumlah kanal live, kategori, serta kanal yang ditampilkan.
+- Sakelar "Auto play saat membuka kanal" di halaman Pengaturan -> Playback.
+  Saat nyala,  stream langsung diputar otomatis begitu kanal dibuka; saat mati, pemutar
+  menampilkan tombol play seperti biasa. Preferensi tersimpan antar sesi.
+- Pemutar WebView Android sekarang bisa memutar media tanpa interaksi
+  pengguna (media playback requires user gesture dimatikan), sehingga kanal
+  embed Detik, RCTI+, CNN, dan CNBC lebih sering langsung berjalan.
+- Auto play kanal embed diperkuat: pemutar mencoba semua elemen video di
+  halaman (bukan hanya yang pertama), memanggil API JWPlayer dan video.js,
+  menekan tombol play besar milik situs, dan mengulang percobaan tiap detik
+  sampai 15 detik. Kanal yang pemutarnya baru siap setelah beberapa detik
+  (RCTI+) sekarang tetap tertangkap.
+- Ikon launcher dan splash mengikuti palet warna baru.
+
+PERBAIKAN KONTEN
+- Kanal TVRI duplikat dihapus. Entri webview "TVRI" ternyata menunjuk TVRI
+  Lampung, bukan TVRI Nasional, sementara kanal yang benar (TVRI Nasional +
+  seluruh kanal regional) sudah tersedia sebagai HLS native. Sekarang hanya
+  ada satu kanal TVRI dan isinya benar.
+- Kategori TVRI Nasional dipindahkan dari "Daerah" ke "Nasional".
+- IDX TV menampilkan pesan yang jelas bahwa kanal sedang tidak tersedia
+  (sertifikat server VisionPlus kedaluwarsa), bukan pesan error umum.
+
+PERBAIKAN
+- Rasio tinggi kartu kanal dihitung otomatis sesuai lebar kolom, jadi grid
+  tidak lagi menyisakan ruang kosong di bawah konten.
+- Efek fokus dan tekan pada kartu kanal lebih halus (skala 1.035 saat fokus,
+  0.985 saat ditekan) untuk navigasi remote D-pad yang lebih responsif.
+- Badge "Pembaruan Tersedia" diselaraskan dengan tema baru.
+
+PERBAIKAN TEKNIS
+- Alur rilis otomatis ke GitHub dirapikan: workflow CI hanya membangun dan
+  menyimpan artifact, sedangkan release + asset APK + version.json diterbitkan
+  oleh script rilis lokal sehingga tautan unduh yang ditunjuk aplikasi selalu
+  hidup saat notifikasi update dikirim.
+- Laporan audit auto-play kanal embed ditambahkan di reports/.

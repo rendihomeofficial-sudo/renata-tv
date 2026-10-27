@@ -521,7 +521,7 @@ class HlsChannels {
       name: 'TVRI Nasional',
       streamUrl: 'https://ott-balancer.tvri.go.id/live/eds/Nasional/hls/Nasional.m3u8',
       logoUrl: 'assets/logos/tvri.png',
-      category: 'Daerah',
+      category: 'Nasional',
       type: StreamType.m3u8,
       description: 'Siaran Langsung TVRI Nasional',
       fallbackUrls: [

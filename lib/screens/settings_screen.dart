@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/channel_service.dart';
 import '../services/favorites_service.dart';
+import '../services/player_settings_service.dart';
 import '../theme/app_theme.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -26,10 +27,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _hasSavedPlaylist = false;
   String? _statusMessage;
 
+  /// Apakah stream langsung diputar otomatis saat kanal dibuka.
+  bool _autoPlayOnOpen = true;
+
   @override
   void initState() {
     super.initState();
     _loadSavedUrl();
+    _loadAutoPlay();
   }
 
   @override
@@ -45,6 +50,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _urlController.text = saved;
       setState(() => _hasSavedPlaylist = true);
     }
+  }
+
+  /// Ambil nilai preferensi auto play yang terakhir disimpan pengguna.
+  Future<void> _loadAutoPlay() async {
+    final value = await PlayerSettingsService.getAutoPlayOnOpen();
+    if (!mounted) return;
+    setState(() => _autoPlayOnOpen = value);
+  }
+
+  /// Simpan pilihan auto play dan beri umpan balik ke pengguna.
+  Future<void> _toggleAutoPlay(bool value) async {
+    setState(() => _autoPlayOnOpen = value);
+    await PlayerSettingsService.setAutoPlayOnOpen(value);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(value
+            ? 'Auto play dinyalakan. Siaran langsung diputar otomatis.'
+            : 'Auto play dimatikan. Siaran dimulai setelah kamu menekan tombol play.'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   /// Hapus playlist M3U kustom yang tersimpan dan kembali ke daftar channel
@@ -126,41 +153,111 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('Pengaturan & Playlist IPTV'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.lg,
+          32,
+        ),
         children: [
-          // Banner Info
+          // Banner info dengan gaya premium: panel kaca di atas gradien gelap.
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
-              color: AppColors.accent.withOpacity(0.10),
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: AppColors.accent.withOpacity(0.28)),
+              gradient: AppColors.heroGradient,
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+              border: Border.all(color: AppColors.borderStrong),
+              boxShadow: AppShadows.elevated(opacity: 0.35),
             ),
-            child: const Row(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline_rounded, color: AppColors.accent, size: 26),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Anda dapat menambahkan link playlist M3U/M3U8 eksternal untuk memperluas daftar channel TV.',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.brandGradient,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: const Icon(
+                    Icons.info_outline_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Playlist M3U Eksternal',
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Tambahkan link playlist M3U/M3U8 untuk memperluas '
+                        'daftar channel TV.',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12.5,
+                          height: 1.45,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
 
-          const Text(
-            'Custom Playlist M3U URL',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
+          const _SectionTitle(
+            icon: Icons.play_circle_outline_rounded,
+            title: 'Playback',
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.sm,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _autoPlayOnOpen,
+              onChanged: _toggleAutoPlay,
+              // Warna sakelar mengikuti warna utama aplikasi lewat tema.
+              title: const Text(
+                'Auto play saat membuka kanal',
+                style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              ),
+              subtitle: const Text(
+                'Siaran langsung langsung diputar begitu kanal dibuka. Matikan '
+                'kalau ingin memulai menonton secara manual.',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+              ),
             ),
           ),
-          const SizedBox(height: 8),
+
+          const SizedBox(height: AppSpacing.xxl),
+
+          const _SectionTitle(
+            icon: Icons.link_rounded,
+            title: 'Custom Playlist M3U URL',
+          ),
+          const SizedBox(height: AppSpacing.md),
 
           TextField(
             controller: _urlController,
@@ -231,47 +328,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
 
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.xxl),
 
-          const Divider(color: AppColors.border),
+          const _SectionTitle(
+            icon: Icons.explore_outlined,
+            title: 'Sumber Playlist Legal IPTV',
+          ),
+          const SizedBox(height: AppSpacing.md),
 
-          const SizedBox(height: 16),
-
-          const Text(
-            'Rekomendasi Sumber Playlist Legal IPTV:',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              children: [
+                _PlaylistSourceTile(
+                  icon: Icons.public_rounded,
+                  iconColor: AppColors.primaryLight,
+                  title: 'IPTV-ORG Indonesia',
+                  subtitle:
+                      'https://iptv-org.github.io/iptv/countries/id.m3u',
+                  onTap: () {
+                    _urlController.text =
+                        'https://iptv-org.github.io/iptv/countries/id.m3u';
+                  },
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                _PlaylistSourceTile(
+                  icon: Icons.language_rounded,
+                  iconColor: AppColors.accent,
+                  title: 'IPTV-ORG Global News',
+                  subtitle:
+                      'https://iptv-org.github.io/iptv/categories/news.m3u',
+                  onTap: () {
+                    _urlController.text =
+                        'https://iptv-org.github.io/iptv/categories/news.m3u';
+                  },
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.public_rounded, color: AppColors.primaryLight),
-            title: const Text('IPTV-ORG Indonesia', style: TextStyle(color: AppColors.textPrimary, fontSize: 13)),
-            subtitle: const Text('https://iptv-org.github.io/iptv/countries/id.m3u', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
-            onTap: () {
-              _urlController.text = 'https://iptv-org.github.io/iptv/countries/id.m3u';
-            },
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.language_rounded, color: AppColors.accent),
-            title: const Text('IPTV-ORG Global News', style: TextStyle(color: AppColors.textPrimary, fontSize: 13)),
-            subtitle: const Text('https://iptv-org.github.io/iptv/categories/news.m3u', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
-            onTap: () {
-              _urlController.text = 'https://iptv-org.github.io/iptv/categories/news.m3u';
-            },
-          ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
 
           // Kartu informasi aplikasi.
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              gradient: AppColors.glassGradient,
               borderRadius: BorderRadius.circular(AppRadius.lg),
               border: Border.all(color: AppColors.border),
             ),
@@ -304,7 +410,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           const Center(
             child: Text(
@@ -313,6 +419,109 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Judul bagian dengan ikon kecil, dipakai untuk memisahkan bagian menu.
+class _SectionTitle extends StatelessWidget {
+  final IconData icon;
+  final String title;
+
+  const _SectionTitle({required this.icon, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppColors.gold),
+        const SizedBox(width: AppSpacing.sm),
+        Text(
+          title,
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.2,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        const Expanded(child: Divider(height: 1)),
+      ],
+    );
+  }
+}
+
+/// Baris sumber playlist yang bisa diketuk untuk mengisi kolom URL.
+class _PlaylistSourceTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _PlaylistSourceTile({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.14),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Icon(icon, color: iconColor, size: 17),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.north_east_rounded,
+              color: AppColors.textMuted,
+              size: 15,
+            ),
+          ],
+        ),
       ),
     );
   }

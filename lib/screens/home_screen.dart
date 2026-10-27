@@ -177,57 +177,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Kartu statistik kecil pada header Home Screen.
-  Widget _buildStatPill({
-    required IconData icon,
-    required String value,
-    required String label,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 16, color: AppColors.primaryLight),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      height: 1.1,
-                    ),
-                  ),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.textMuted,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _openSettings() {
     Navigator.push(
       context,
@@ -246,36 +195,136 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Strip ringkasan di atas daftar kanal: jumlah kanal, jumlah kategori,
-  /// dan jumlah channel yang sedang ditampilkan.
-  Widget _buildStatsStrip() {
+  /// Panel hero di bagian atas Home Screen.
+  ///
+  /// Berisi headline singkat, lencana mutu, dan angka ringkas supaya
+  /// pengguna langsung tahu posisi aplikasi sebelum menggulir daftar.
+  Widget _buildHeroPanel() {
     final total = _allChannels.length;
-    final shown = _filteredChannels.length;
     final categoryCount =
         (_categories.where((c) => c != 'Semua' && c != 'Favorit')).length;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      child: Row(
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      decoration: BoxDecoration(
+        gradient: AppColors.heroGradient,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(color: AppColors.borderStrong),
+        boxShadow: AppShadows.soft(opacity: 0.4, blur: 22, offsetY: 8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStatPill(
-            icon: Icons.live_tv_rounded,
-            value: '$total',
-            label: 'Kanal',
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  gradient: AppColors.goldGradient,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: const Text(
+                  'PREMIUM',
+                  style: TextStyle(
+                    color: Color(0xFF3A2A05),
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Tanpa buffering',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          _buildStatPill(
-            icon: Icons.category_rounded,
-            value: '$categoryCount',
-            label: 'Kategori',
+          const SizedBox(height: 12),
+          const Text(
+            'Siaran TV Indonesia,\nsatu ketukan dari rumah.',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 19,
+              fontWeight: FontWeight.w800,
+              height: 1.25,
+              letterSpacing: -0.4,
+            ),
           ),
-          const SizedBox(width: 8),
-          _buildStatPill(
-            icon: Icons.filter_alt_rounded,
-            value: '$shown',
-            label: 'Ditampilkan',
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _buildHeroMetric(
+                value: '$total',
+                label: 'Kanal live',
+                icon: Icons.live_tv_rounded,
+              ),
+              const SizedBox(width: 10),
+              _buildHeroMetric(
+                value: '$categoryCount',
+                label: 'Kategori',
+                icon: Icons.category_rounded,
+              ),
+              const SizedBox(width: 10),
+              _buildHeroMetric(
+                value: '${_filteredChannels.length}',
+                label: 'Ditampilkan',
+                icon: Icons.filter_alt_rounded,
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  /// Angka ringkas kecil di dalam panel hero.
+  Widget _buildHeroMetric({
+    required String value,
+    required String label,
+    required IconData icon,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: Colors.white.withOpacity(0.10)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 14, color: AppColors.primaryLight),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                height: 1.1,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -444,63 +493,79 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
             ),
 
-            // Ringkasan singkat jumlah kanal & kategori.
-            _buildStatsStrip(),
+            // Panel hero: posisi aplikasi, lencana mutu, dan ringkasan data.
+            _buildHeroPanel(),
 
             // Kotak Pencarian Channel
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
-              child: TextField(
-                controller: _searchController,
-                style: const TextStyle(color: AppColors.textPrimary),
-                decoration: InputDecoration(
-                  hintText: 'Cari siaran (Trans TV, Metro, Net TV, dsb)...',
-                  hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-                  prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() => _searchQuery = '');
-                            _applyFilter();
-                          },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: AppColors.surface,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    borderSide: const BorderSide(color: AppColors.border),
-                  ),
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  boxShadow: AppShadows.soft(opacity: 0.3, blur: 16, offsetY: 4),
                 ),
-                onChanged: (val) {
-                  setState(() => _searchQuery = val);
-                  _applyFilter();
-                },
+                child: TextField(
+                  controller: _searchController,
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Cari siaran (Trans TV, Metro, Net TV, dsb)...',
+                    hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 20),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary, size: 18),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                              _applyFilter();
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: AppColors.surfaceElevated,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 13, horizontal: 16),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      borderSide: const BorderSide(color: AppColors.primary, width: 1.4),
+                    ),
+                  ),
+                  onChanged: (val) {
+                    setState(() => _searchQuery = val);
+                    _applyFilter();
+                  },
+                ),
               ),
             ),
 
             // Horizontal Tab Kategori
             SizedBox(
-              height: 42,
+              height: 38,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 itemCount: _categories.length,
                 itemBuilder: (context, index) {
                   final cat = _categories[index];
-                  final isSelected = cat == _selectedCategory;                    return Padding(
+                  final isSelected = cat == _selectedCategory;
+                  return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: ChoiceChip(
                         label: Text(cat),
                         selected: isSelected,
                         selectedColor: AppColors.primary,
                         backgroundColor: AppColors.surface,
+                        showCheckmark: false,
                         labelStyle: TextStyle(
                           color: isSelected ? Colors.white : AppColors.textSecondary,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                           fontSize: 12,
                         ),
                         shape: RoundedRectangleBorder(
@@ -557,14 +622,24 @@ class _HomeScreenState extends State<HomeScreen> {
                           builder: (context, constraints) {
                             final crossAxisCount =
                                 _crossAxisCountFor(constraints.maxWidth);
+                            const gridPadding = 16.0;
+                            const gridSpacing = 14.0;
+                            // Lebar tiap tile dihitung manual supaya rasio
+                            // kartu bisa disesuaikan dengan lebar tile itu.
+                            final tileWidth =
+                                (constraints.maxWidth -
+                                        gridPadding * 2 -
+                                        gridSpacing * (crossAxisCount - 1)) /
+                                    crossAxisCount;
                             return GridView.builder(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                              padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: crossAxisCount,
-                                childAspectRatio: 0.92,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
+                                childAspectRatio:
+                                    ChannelCard.aspectRatioFor(tileWidth),
+                                crossAxisSpacing: gridSpacing,
+                                mainAxisSpacing: gridSpacing,
                               ),
                               itemCount: _filteredChannels.length,
                               itemBuilder: (context, index) {

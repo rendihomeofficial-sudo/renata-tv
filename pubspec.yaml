@@ -1,7 +1,7 @@
 name: renata_tv
 description: "Aplikasi Nonton TV Android Native - RENATA TV"
 publish_to: "none"
-version: 1.5.0+6
+version: 1.6.0+7
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -11,6 +11,9 @@ dependencies:
     sdk: flutter
   # In-App WebView untuk embed stream (Detik, RCTI+, YouTube, CNN, CNBC, TVRI)
   webview_flutter: ^4.7.0
+  # Diperlukan langsung untuk mengaktifkan pemutaran media otomatis
+  # (media playback tanpa gesture) pada WebView Android.
+  webview_flutter_android: ^4.3.2
   # Video player untuk stream m3u8 langsung
   video_player: ^2.8.3
   chewie: ^1.7.5

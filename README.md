@@ -37,6 +37,7 @@ Aplikasi Android Native (**Flutter**) khusus smartphone, tablet, dan Smart TV Bo
 2. **Dukungan Multi-Engine Player**:
    - Terintegrasi langsung dengan **In-App WebView** berkecepatan tinggi untuk stream embed resmi (Detik, RCTI+, TVRI).
    - Terintegrasi dengan **YouTube Player Flutter Native** untuk siaran live YouTube tanpa iklan browser yang mengganggu.
+   - Pengaturan **"Auto play saat membuka kanal"** di halaman Pengaturan: matikan bila ingin memulai menonton secara manual (siaran menunggu tombol play).
    - Layar tidak akan mati sendiri saat menonton (**Wakelock** aktif otomatis).
 
 3. **Fitur Auto Update APK (Pop-up & Download Otomatis)**:

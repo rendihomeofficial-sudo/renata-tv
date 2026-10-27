@@ -4,10 +4,13 @@ import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import '../models/channel.dart';
 import '../services/favorites_service.dart';
+import '../services/player_settings_service.dart';
+import '../theme/app_theme.dart';
 
 class PlayerScreen extends StatefulWidget {
   final Channel channel;
@@ -55,15 +58,29 @@ class _PlayerScreenState extends State<PlayerScreen> {
   /// Listener buffering dari VideoPlayerController.
   VoidCallback? _bufferingListener;
 
+  /// Apakah stream langsung harus diputar otomatis saat kanal dibuka.
+  /// Diambil dari preferensi pengguna di halaman Pengaturan.
+  bool _autoPlayOnOpen = true;
+
   @override
   void initState() {
     super.initState();
     _currentChannel = widget.channel;
     _checkFavorite();
-    // `silent` dipakai karena initState berjalan pada fase build sehingga
-    // pemanggilan setState() di dalamnya akan memicu error.
-    _setupPlayer(silent: true);
+    // Pemutar disiapkan setelah preferensi auto play dibaca, supaya pilihan
+    // pengguna langsung berlaku pada kanal pertama yang dibuka.
+    _loadAutoPlayThenSetup();
     WakelockPlus.enable();
+  }
+
+  /// Baca preferensi auto play lalu siapkan pemutar sesuai nilai tersebut.
+  Future<void> _loadAutoPlayThenSetup() async {
+    final autoPlay = await PlayerSettingsService.getAutoPlayOnOpen();
+    if (!mounted) return;
+    _autoPlayOnOpen = autoPlay;
+    // `silent` dipakai karena setup pemutar bisa berjalan pada fase build
+    // sehingga pemanggilan setState() di dalamnya akan memicu error.
+    _setupPlayer(silent: true);
   }
 
   Future<void> _checkFavorite() async {
@@ -117,8 +134,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
       // Inisialisasi YouTube Player
       _youtubeController = YoutubePlayerController(
         initialVideoId: channel.youtubeVideoId!,
-        flags: const YoutubePlayerFlags(
-          autoPlay: true,
+        flags: YoutubePlayerFlags(
+          autoPlay: _autoPlayOnOpen,
           mute: false,
           isLive: true,
           enableCaption: false,
@@ -183,7 +200,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
         _chewieController = ChewieController(
           videoPlayerController: controller,
-          autoPlay: true,
+          autoPlay: _autoPlayOnOpen,
           aspectRatio: 16 / 9,
           allowFullScreen: false,
           showControls: true,
@@ -234,7 +251,20 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   /// Siapkan WebView untuk channel embed (Detik, RCTI+, CNN, TVRI, dll).
   void _initWebView(Channel channel) {
-    _webViewController = WebViewController()
+    final controller = WebViewController();
+    _webViewController = controller;
+
+    if (_autoPlayOnOpen) {
+      // Di Android, WebView memutar media hanya setelah ada interaksi
+      // pengguna. Izinkan pemutaran otomatis supaya stream langsung tidak
+      // diam saja ketika kanal dibuka.
+      final platform = controller.platform;
+      if (platform is AndroidWebViewController) {
+        platform.setMediaPlaybackRequiresUserGesture(false);
+      }
+    }
+
+    controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.black)
       ..setNavigationDelegate(
@@ -244,6 +274,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
           },
           onPageFinished: (url) {
             if (mounted) setState(() => _isLoading = false);
+            if (_autoPlayOnOpen) _scheduleWebAutoPlay(controller);
           },
           onWebResourceError: (error) {
             if (!mounted) return;
@@ -251,9 +282,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
             // Hanya error halaman utama yang dianggap fatal; error aset/iklan
             // tidak boleh menghentikan pemutaran.
             if (error.isForMainFrame == true) {
-              _showPlayerError(
-                'Halaman live stream tidak dapat dimuat. Periksa koneksi internet Anda lalu coba lagi.',
-              );
+              _showPlayerError(_mainFrameErrorMessage(channel));
             }
           },
         ),
@@ -264,9 +293,213 @@ class _PlayerScreenState extends State<PlayerScreen> {
       ..loadRequest(Uri.parse(channel.streamUrl));
   }
 
+  /// Skrip yang mencoba memulai pemutaran pada halaman web.
+  ///
+  /// Situs embed (Detik, RCTI+, CNN, CNBC) biasanya memakai video.js atau
+  /// JWPlayer dan sengaja menonaktifkan auto play di level halaman. Skrip ini
+  /// karena itu tidak hanya memanggil `play()` pada elemen video pertama,
+  /// tetapi juga:
+  /// - menelusuri semua elemen `<video>` lalu memilih yang paling besar
+  ///   (elemen live, bukan slot iklan kecil);
+  /// - memanggil API pemain yang tersedia (`jwplayer()`, `videojs`);
+  /// - menekan tombol play besar yang ditampilkan situs;
+  /// - mengulang percobaan secara berkala sampai 15 detik, karena beberapa
+  ///   pemain baru siap setelah beberapa detik (mis. setelah snapshot
+  ///   Firestore dan iklan IMA pada RCTI+).
+  ///
+  /// Nilai balik dipakai sebagai diagnostik:
+  /// `playing`, `muted-playing`, `no-video`, `rejected`, atau `error`.
+  static const String _webAutoPlayScript = '''
+(function () {
+  function pickVideo() {
+    var all = document.querySelectorAll('video');
+    if (!all || all.length === 0) return null;
+    var best = null;
+    var bestSize = -1;
+    for (var i = 0; i < all.length; i++) {
+      var v = all[i];
+      if (!v) continue;
+      var w = v.videoWidth || v.clientWidth || 0;
+      var h = v.videoHeight || v.clientHeight || 0;
+      var size = w * h;
+      // Elemen yang sudah diputar/dimuat dianggap lebih mungkin live stream.
+      if (v.readyState >= 1) size += 1000000;
+      if (size > bestSize) {
+        bestSize = size;
+        best = v;
+      }
+    }
+    return best;
+  }
+
+  function tryPlayerApi() {
+    // JWPlayer (RCTI+, Detik)
+    try {
+      if (typeof window.jwplayer === 'function') {
+        var inst = window.jwplayer();
+        if (inst && typeof inst.play === 'function') {
+          inst.play();
+          return 'jwplayer';
+        }
+        if (inst && inst.length) {
+          for (var i = 0; i < inst.length; i++) {
+            if (inst[i] && typeof inst[i].play === 'function') {
+              inst[i].play();
+              return 'jwplayer';
+            }
+          }
+        }
+      }
+    } catch (e) {}
+    // video.js (Detik, TVRI, CNN)
+    try {
+      if (window.videojs && typeof window.videojs.getPlayers === 'function') {
+        var players = window.videojs.getPlayers();
+        for (var key in players) {
+          try {
+            players[key].play();
+            return 'videojs';
+          } catch (e) {}
+        }
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function clickBigPlayButton() {
+    var selectors = [
+      '.vjs-big-play-button',
+      '.vjs-play-button',
+      '.jwplayer-play-button',
+      'button[aria-label*="Play" i]',
+      'button[title*="Play" i]'
+    ];
+    for (var i = 0; i < selectors.length; i++) {
+      var btn = document.querySelector(selectors[i]);
+      if (btn) {
+        try {
+          btn.click();
+          return true;
+        } catch (e) {}
+      }
+    }
+    return false;
+  }
+
+  try {
+    var api = tryPlayerApi();
+    var v = pickVideo();
+    if (!v) {
+      if (api) return api;
+      if (clickBigPlayButton()) return 'clicked';
+      return 'no-video';
+    }
+
+    if (!v.paused && v.readyState >= 2) return 'playing';
+
+    var result = 'rejected';
+    try {
+      v.muted = false;
+      var p = v.play();
+      if (p && p.then) {
+        p.then(function () {
+          window.__renataAutoPlayResult = 'playing';
+        }).catch(function () {
+          try {
+            v.muted = true;
+            var p2 = v.play();
+            if (p2 && p2.then) {
+              p2.then(function () {
+                window.__renataAutoPlayResult = 'muted-playing';
+              }).catch(function () {});
+            }
+          } catch (e) {}
+        });
+      }
+      result = 'playing';
+    } catch (e) {
+      try {
+        v.muted = true;
+        var p3 = v.play();
+        if (p3 && p3.then) {
+          p3.then(function () {
+            window.__renataAutoPlayResult = 'muted-playing';
+          }).catch(function () {});
+        }
+        result = 'muted-playing';
+      } catch (e2) {
+        result = 'error';
+      }
+    }
+
+    if (api) {
+      window.__renataAutoPlayResult = api;
+    } else if (clickBigPlayButton()) {
+      window.__renataAutoPlayResult = 'clicked';
+    }
+    return result;
+  } catch (e) {
+    return 'error';
+  }
+})()
+''';
+
+  /// Berapa kali skrip auto play dicoba, dan jeda antar percobaan.
+  ///
+  /// Pemutar web sering baru siap beberapa detik setelah halaman terbuka,
+  /// jadi percobaan dilanjutkan sampai [_webAutoPlayMaxAttempts] kali.
+  static const int _webAutoPlayMaxAttempts = 15;
+  static const Duration _webAutoPlayInterval = Duration(seconds: 1);
+
+  /// Jumlah percobaan auto play yang sudah dijalankan untuk halaman aktif.
+  int _webAutoPlayAttempts = 0;
+
+  /// Jalankan skrip auto play pada halaman web secara berkala.
+  void _scheduleWebAutoPlay(WebViewController controller) {
+    _webAutoPlayAttempts = 0;
+    _runWebAutoPlayScript(controller);
+  }
+
+  Future<void> _runWebAutoPlayScript(WebViewController controller) async {
+    // Abaikan kalau halaman sudah ditutup atau kanal sudah berganti.
+    if (!mounted || controller != _webViewController) return;
+    if (_webAutoPlayAttempts >= _webAutoPlayMaxAttempts) return;
+
+    _webAutoPlayAttempts++;
+    try {
+      final result =
+          await controller.runJavaScriptReturningResult(_webAutoPlayScript);
+      debugPrint('Auto play percobaan $_webAutoPlayAttempts: $result');
+    } catch (_) {
+      // Halaman sudah ditutup atau controller sudah dilepas.
+    }
+
+    if (!mounted || controller != _webViewController) return;
+    if (_webAutoPlayAttempts >= _webAutoPlayMaxAttempts) return;
+
+    Future.delayed(_webAutoPlayInterval, () {
+      _runWebAutoPlayScript(controller);
+    });
+  }
+
   void _setLoading(bool value) {
     if (!mounted) return;
     setState(() => _isLoading = value);
+  }
+
+  /// Pesan error yang ditampilkan ketika halaman utama kanal gagal dimuat.
+  ///
+  /// Untuk kanal yang kendalanya sudah diketahui (mis. sertifikat server
+  /// kedaluwarsa), pesan dibuat lebih spesifik supaya pengguna tidak
+  /// mengira itu masalah koneksi internet miliknya.
+  String _mainFrameErrorMessage(Channel channel) {
+    if (channel.id == 'idxtv') {
+      return 'IDX TV sedang tidak tersedia. Sertifikat server VisionPlus '
+          'untuk kanal ini kedaluwarsa, jadi live stream belum bisa dimuat. '
+          'Coba lagi nanti.';
+    }
+    return 'Halaman live stream tidak dapat dimuat. '
+        'Periksa koneksi internet Anda lalu coba lagi.';
   }
 
   void _showPlayerError(String message) {
@@ -386,13 +619,13 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   child: SafeArea(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.black54,
+                        color: Colors.black.withOpacity(0.55),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(color: Colors.white24, width: 1),
                       ),
                       child: IconButton(
                         icon: const Icon(Icons.fullscreen_exit_rounded,
-                            color: Colors.white, size: 28),
+                            color: Colors.white, size: 26),
                         tooltip: 'Keluar Layar Penuh',
                         onPressed: _toggleFullScreen,
                       ),
@@ -404,10 +637,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   left: 16,
                   child: SafeArea(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                       decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.black.withOpacity(0.55),
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
                         border: Border.all(color: Colors.white24, width: 1),
                       ),
                       child: Row(
@@ -417,7 +650,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                             width: 8,
                             height: 8,
                             decoration: const BoxDecoration(
-                              color: Colors.redAccent,
+                              color: AppColors.live,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -427,7 +660,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 13,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
@@ -447,45 +680,69 @@ class _PlayerScreenState extends State<PlayerScreen> {
       Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
-          backgroundColor: const Color(0xFF14171F),
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.background,
+          foregroundColor: AppColors.textPrimary,
+          titleSpacing: 16,
           title: Row(
             children: [
               Expanded(
                 child: Text(
                   _currentChannel.name,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  'LIVE',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-              ),
+              _buildLiveBadge(),
             ],
           ),
           actions: [
             IconButton(
-              icon: Icon(
-                _isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: _isFavorite ? Colors.redAccent : Colors.white,
-              ),
               tooltip: 'Favorit',
               onPressed: _toggleFavorite,
+              icon: Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: _isFavorite
+                      ? AppColors.primary.withOpacity(0.18)
+                      : Colors.white.withOpacity(0.05),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: _isFavorite
+                        ? AppColors.primary.withOpacity(0.5)
+                        : AppColors.border,
+                  ),
+                ),
+                child: Icon(
+                  _isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  color: _isFavorite ? AppColors.primaryLight : AppColors.textSecondary,
+                  size: 18,
+                ),
+              ),
             ),
+            const SizedBox(width: 4),
             IconButton(
-              icon: const Icon(Icons.refresh),
               tooltip: 'Muat Ulang Siaran',
               onPressed: () => _setupPlayer(),
+              icon: Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: const Icon(
+                  Icons.refresh_rounded,
+                  color: AppColors.textSecondary,
+                  size: 18,
+                ),
+              ),
             ),
+            const SizedBox(width: 8),
           ],
         ),
         body: OrientationBuilder(
@@ -505,20 +762,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   Positioned.fill(child: _buildPlayerView()),
                   // Tombol Full Screen (Masuk Mode Landscape)
                   Positioned(
-                    bottom: 8,
-                    right: 8,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.fullscreen_rounded,
-                            color: Colors.white, size: 24),
-                        tooltip: 'Layar Penuh (Landscape)',
-                        onPressed: _toggleFullScreen,
-                      ),
-                    ),
+                    bottom: 10,
+                    right: 10,
+                    child: _buildFullScreenButton(),
                   ),
                 ],
               ),
@@ -526,17 +772,24 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
             // Detail Channel Info
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              color: const Color(0xFF1B1E26),
+              margin: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                gradient: AppColors.glassGradient,
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: AppColors.border),
+                boxShadow: AppShadows.soft(opacity: 0.35, blur: 18, offsetY: 6),
+              ),
               child: Row(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                     child: Container(
-                      width: 44,
-                      height: 44,
+                      width: 52,
+                      height: 52,
                       color: Colors.white,
-                      padding: const EdgeInsets.all(4),
+                      padding: const EdgeInsets.all(5),
                       child: _currentChannel.logoUrl.isNotEmpty
                           ? (_currentChannel.logoUrl.startsWith('assets/')
                               ? Image.asset(
@@ -554,7 +807,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                           : const Icon(Icons.tv, color: Colors.black54),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 13),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -562,15 +815,33 @@ class _PlayerScreenState extends State<PlayerScreen> {
                         Text(
                           _currentChannel.name,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                             fontSize: 15,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 3),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            _buildInfoPill(
+                              icon: Icons.category_rounded,
+                              label: _currentChannel.category,
+                            ),
+                            const SizedBox(width: 6),
+                            _buildInfoPill(
+                              icon: Icons.cell_tower_rounded,
+                              label: _streamTypeLabel(_currentChannel.type),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
                         Text(
                           _currentChannel.description,
-                          style: const TextStyle(color: Colors.white60, fontSize: 12),
+                          style: const TextStyle(
+                              color: AppColors.textMuted, fontSize: 12),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -581,21 +852,47 @@ class _PlayerScreenState extends State<PlayerScreen> {
               ),
             ),
 
-            const Divider(height: 1, color: Colors.white12),
+            const Divider(height: 1, color: AppColors.border),
 
             // Daftar Channel Siaran Lainnya
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
               child: Row(
                 children: [
-                  const Icon(Icons.live_tv_rounded, color: Colors.redAccent, size: 18),
-                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.brandGradient,
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ),
+                    child: const Icon(Icons.live_tv_rounded,
+                        color: Colors.white, size: 15),
+                  ),
+                  const SizedBox(width: 10),
                   Text(
-                    'Saluran TV Lainnya (${widget.allChannels.length})',
+                    'Saluran TV Lainnya',
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13.5,
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Text(
+                      '${widget.allChannels.length}',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                      ),
                     ),
                   ),
                 ],
@@ -604,58 +901,78 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
             Expanded(
               child: ListView.separated(
+                padding: const EdgeInsets.only(bottom: 16),
                 itemCount: widget.allChannels.length,
-                separatorBuilder: (_, __) => const Divider(height: 1, color: Colors.white10),
+                separatorBuilder: (_, __) =>
+                    const Divider(height: 1, color: AppColors.border),
                 itemBuilder: (context, index) {
                   final ch = widget.allChannels[index];
                   final isSelected = ch.id == _currentChannel.id;
 
-                  return ListTile(
-                    selected: isSelected,
-                    selectedTileColor: Colors.redAccent.withOpacity(0.12),
-                    leading: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        color: Colors.white,
-                        padding: const EdgeInsets.all(4),
-                        child: ch.logoUrl.isNotEmpty
-                            ? (ch.logoUrl.startsWith('assets/')
-                                ? Image.asset(
-                                    ch.logoUrl,
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) =>
-                                        const Icon(Icons.tv, color: Colors.black38),
-                                  )
-                                : Image.network(
-                                    ch.logoUrl,
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) =>
-                                        const Icon(Icons.tv, color: Colors.black38),
-                                  ))
-                            : const Icon(Icons.tv, color: Colors.black38),
+                  return Container(
+                    color: isSelected
+                        ? AppColors.primary.withOpacity(0.10)
+                        : Colors.transparent,
+                    child: ListTile(
+                      selected: isSelected,
+                      selectedTileColor: Colors.transparent,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 2),
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        child: Container(
+                          width: 42,
+                          height: 42,
+                          color: Colors.white,
+                          padding: const EdgeInsets.all(4),
+                          child: ch.logoUrl.isNotEmpty
+                              ? (ch.logoUrl.startsWith('assets/')
+                                  ? Image.asset(
+                                      ch.logoUrl,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (_, __, ___) =>
+                                          const Icon(Icons.tv, color: Colors.black38),
+                                    )
+                                  : Image.network(
+                                      ch.logoUrl,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (_, __, ___) =>
+                                          const Icon(Icons.tv, color: Colors.black38),
+                                    ))
+                              : const Icon(Icons.tv, color: Colors.black38),
+                        ),
                       ),
-                    ),
-                    title: Text(
-                      ch.name,
-                      style: TextStyle(
-                        color: isSelected ? Colors.redAccent : Colors.white,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                        fontSize: 14,
+                      title: Text(
+                        ch.name,
+                        style: TextStyle(
+                          color: isSelected
+                              ? AppColors.primaryLight
+                              : AppColors.textPrimary,
+                          fontWeight:
+                              isSelected ? FontWeight.w700 : FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    subtitle: Text(
-                      '${ch.category} • ${_streamTypeLabel(ch.type)}',
-                      style: TextStyle(
-                        color: isSelected ? Colors.redAccent.withOpacity(0.8) : Colors.white54,
-                        fontSize: 11,
+                      subtitle: Text(
+                        '${ch.category} • ${_streamTypeLabel(ch.type)}',
+                        style: TextStyle(
+                          color: isSelected
+                              ? AppColors.primaryLight.withOpacity(0.8)
+                              : AppColors.textMuted,
+                          fontSize: 11,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      trailing: isSelected
+                          ? const Icon(Icons.play_circle_fill_rounded,
+                              color: AppColors.primaryLight, size: 26)
+                          : const Icon(Icons.chevron_right_rounded,
+                              color: AppColors.textMuted, size: 22),
+                      onTap: () => _switchChannel(ch),
                     ),
-                    trailing: isSelected
-                        ? const Icon(Icons.play_circle_fill, color: Colors.redAccent)
-                        : const Icon(Icons.chevron_right, color: Colors.white24),
-                    onTap: () => _switchChannel(ch),
                   );
                 },
               ),
@@ -686,23 +1003,30 @@ class _PlayerScreenState extends State<PlayerScreen> {
           ),
         ),
         Container(
-          width: 200,
-          color: const Color(0xFF14171F),
+          width: 220,
+          color: AppColors.backgroundSoft,
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+                padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
                 child: Row(
                   children: [
-                    const Icon(Icons.live_tv_rounded,
-                        color: Colors.redAccent, size: 16),
-                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        gradient: AppColors.brandGradient,
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                      child: const Icon(Icons.live_tv_rounded,
+                          color: Colors.white, size: 13),
+                    ),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Kanal (${widget.allChannels.length})',
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w800,
                           fontSize: 13,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -711,6 +1035,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   ],
                 ),
               ),
+              const Divider(height: 1, color: AppColors.border),
               Expanded(
                 child: ListView.builder(
                   itemCount: widget.allChannels.length,
@@ -720,7 +1045,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     return ListTile(
                       dense: true,
                       selected: isSelected,
-                      selectedTileColor: Colors.redAccent.withOpacity(0.15),
+                      selectedTileColor: AppColors.primary.withOpacity(0.12),
                       leading: ClipRRect(
                         borderRadius: BorderRadius.circular(6),
                         child: Container(
@@ -748,9 +1073,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
                       title: Text(
                         ch.name,
                         style: TextStyle(
-                          color: isSelected ? Colors.redAccent : Colors.white,
+                          color: isSelected
+                              ? AppColors.primaryLight
+                              : AppColors.textPrimary,
                           fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.w500,
+                              isSelected ? FontWeight.w700 : FontWeight.w600,
                           fontSize: 12,
                         ),
                         maxLines: 1,
@@ -772,13 +1099,82 @@ class _PlayerScreenState extends State<PlayerScreen> {
   Widget _buildFullScreenButton() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.black54,
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.black.withOpacity(0.55),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: Colors.white24, width: 1),
       ),
       child: IconButton(
-        icon: const Icon(Icons.fullscreen_rounded, color: Colors.white, size: 24),
+        icon: const Icon(Icons.fullscreen_rounded, color: Colors.white, size: 22),
         tooltip: 'Layar Penuh (Landscape)',
         onPressed: _toggleFullScreen,
+      ),
+    );
+  }
+
+  /// Lencana "LIVE" dengan titik berdenyut di AppBar.
+  Widget _buildLiveBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        gradient: AppColors.brandGradient,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        boxShadow: AppShadows.glow(AppColors.primary, opacity: 0.3),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 5),
+          const Text(
+            'LIVE',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.8,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Lencana kecil berisi ikon dan teks, dipakai di panel info kanal.
+  Widget _buildInfoPill({required IconData icon, required String label}) {
+    return Flexible(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.06),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 11, color: AppColors.primaryLight),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -839,16 +1235,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
           // data video belum sampai (jaringan lambat).
           if (_isBuffering && !_isLoading && _playerError == null)
             Container(
-              color: Colors.black26,
-              child: const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(color: Colors.redAccent),
-                    SizedBox(height: 10),
-                    Text('Meny buffering...',
-                        style: TextStyle(color: Colors.white70, fontSize: 12)),
-                  ],
+              color: Colors.black45,
+              child: Center(
+                child: _buildOverlayMessage(
+                  icon: Icons.hourglass_top_rounded,
+                  label: 'Meny buffering...',
                 ),
               ),
             ),
@@ -856,18 +1247,50 @@ class _PlayerScreenState extends State<PlayerScreen> {
           if (_isLoading)
             Container(
               color: Colors.black54,
-              child: const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(color: Colors.redAccent),
-                    SizedBox(height: 10),
-                    Text('Menghubungkan ke siaran live...',
-                        style: TextStyle(color: Colors.white70, fontSize: 12))
-                  ],
+              child: Center(
+                child: _buildOverlayMessage(
+                  icon: Icons.live_tv_rounded,
+                  label: 'Menghubungkan ke siaran live...',
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  /// Panel pesan yang muncul di tengah area video (loading / buffering).
+  Widget _buildOverlayMessage({required IconData icon, required String label}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.55),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: Colors.white.withOpacity(0.10)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 26,
+            height: 26,
+            child: CircularProgressIndicator(
+              color: AppColors.primaryLight,
+              strokeWidth: 2.4,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Icon(icon, color: AppColors.textMuted, size: 18),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -882,22 +1305,31 @@ class _PlayerScreenState extends State<PlayerScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.signal_wifi_connected_no_internet_4_rounded,
-              color: Colors.white54, size: 42),
-          const SizedBox(height: 12),
-          Text(
-            _playerError ?? 'Terjadi kesalahan saat memuat siaran.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white70, fontSize: 13),
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: () => _setupPlayer(),
-            icon: const Icon(Icons.refresh, size: 18),
-            label: const Text('Coba Lagi'),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceElevated,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.signal_wifi_connected_no_internet_4_rounded,
+                    color: AppColors.textMuted, size: 40),
+                const SizedBox(height: 12),
+                Text(
+                  _playerError ?? 'Terjadi kesalahan saat memuat siaran.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () => _setupPlayer(),
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: const Text('Coba Lagi'),
+                ),
+              ],
             ),
           ),
         ],

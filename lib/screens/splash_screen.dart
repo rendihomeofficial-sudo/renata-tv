@@ -145,17 +145,17 @@ class _SplashScreenState extends State<SplashScreen>
                         child: const _AppLogo(),
                       ),
                     ),
-                    const SizedBox(height: 26),
+                    const SizedBox(height: 28),
                     FadeTransition(
                       opacity: _titleFade,
                       child: const _SplashTitle(),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 16),
                     FadeTransition(
                       opacity: _taglineFade,
                       child: const _SplashTagline(),
                     ),
-                    const SizedBox(height: 56),
+                    const SizedBox(height: 60),
                     FadeTransition(
                       opacity: _loadingFade,
                       child: const _SplashLoader(),
@@ -178,17 +178,22 @@ class _AppLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 124,
-      height: 124,
-      padding: const EdgeInsets.all(14),
+      width: 132,
+      height: 132,
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: AppColors.brandGradient,
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.45),
-            blurRadius: 38,
+            color: AppColors.primary.withOpacity(0.50),
+            blurRadius: 46,
             spreadRadius: 6,
+          ),
+          BoxShadow(
+            color: AppColors.primaryLight.withOpacity(0.22),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -220,9 +225,9 @@ class _SplashTitle extends StatelessWidget {
         textAlign: TextAlign.center,
         style: TextStyle(
           color: Colors.white,
-          fontSize: 32,
+          fontSize: 34,
           fontWeight: FontWeight.w900,
-          letterSpacing: 4,
+          letterSpacing: 5,
           height: 1.1,
         ),
       ),
@@ -237,11 +242,11 @@ class _SplashTagline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.06),
+        gradient: AppColors.glassGradient,
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: Colors.white.withOpacity(0.10)),
+        border: Border.all(color: Colors.white.withOpacity(0.12)),
       ),
       child: const Text(
         'Siaran TV Indonesia · Bebas & Jernih',

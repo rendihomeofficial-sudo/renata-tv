@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/auto_update_service.dart';
+import '../theme/app_theme.dart';
 
 /// Badge "Pembaruan Tersedia" untuk Home Screen.
 ///
@@ -47,21 +48,21 @@ class _UpdateBadgeState extends State<UpdateBadge>
         final t = Curves.easeInOut.transform(_pulseController.value);
 
         return Container(
-          margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+          margin: const EdgeInsets.fromLTRB(16, 12, 16, 2),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             gradient: const LinearGradient(
-              colors: [Color(0xFF241419), Color(0xFF1E222A)],
+              colors: [Color(0xFF2A0E17), Color(0xFF151A24)],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
             border: Border.all(
-              color: Colors.redAccent.withOpacity(0.40 + 0.30 * t),
+              color: AppColors.primary.withOpacity(0.40 + 0.30 * t),
               width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.redAccent.withOpacity(0.08 + 0.16 * t),
+                color: AppColors.primary.withOpacity(0.08 + 0.16 * t),
                 blurRadius: 10 + 12 * t,
                 offset: const Offset(0, 4),
               ),
@@ -71,9 +72,9 @@ class _UpdateBadgeState extends State<UpdateBadge>
             color: Colors.transparent,
             child: InkWell(
               onTap: widget.onTap,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
                 child: Row(
                   children: [
                     // Ikon yang membesar-kecil saat denyut.
@@ -81,18 +82,23 @@ class _UpdateBadgeState extends State<UpdateBadge>
                       key: const Key('update-badge-pulse'),
                       scale: 1.0 + 0.10 * t,
                       child: Container(
-                        width: 38,
-                        height: 38,
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.redAccent.withOpacity(0.16),
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.primary.withOpacity(0.30),
+                              AppColors.primary.withOpacity(0.10),
+                            ],
+                          ),
                           border: Border.all(
-                            color: Colors.redAccent.withOpacity(0.55),
+                            color: AppColors.primary.withOpacity(0.55),
                           ),
                         ),
                         child: const Icon(
                           Icons.system_update_rounded,
-                          color: Colors.redAccent,
+                          color: AppColors.primaryLight,
                           size: 20,
                         ),
                       ),
@@ -106,17 +112,17 @@ class _UpdateBadgeState extends State<UpdateBadge>
                           const Text(
                             'Pembaruan Tersedia',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.textPrimary,
                               fontWeight: FontWeight.w800,
                               fontSize: 13,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 3),
                           Text(
                             'Versi v${widget.updateInfo.latestVersionName} '
                             'sudah bisa diunduh',
                             style: const TextStyle(
-                              color: Colors.white54,
+                              color: AppColors.textMuted,
                               fontSize: 11,
                             ),
                           ),
@@ -126,18 +132,20 @@ class _UpdateBadgeState extends State<UpdateBadge>
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
+                        horizontal: 12,
+                        vertical: 7,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.redAccent,
-                        borderRadius: BorderRadius.circular(8),
+                        gradient: AppColors.brandGradient,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        boxShadow: AppShadows.glow(AppColors.primary,
+                            opacity: 0.28),
                       ),
                       child: const Text(
                         'Perbarui',
                         style: TextStyle(
                           color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w800,
                           fontSize: 11,
                         ),
                       ),

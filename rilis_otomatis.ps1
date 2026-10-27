@@ -192,6 +192,15 @@ switch ($Action) {
       throw "Asset APK tidak ditemukan: $AssetPath"
     }
 
+    # Catatan rilis boleh diambil dari file supaya isi body release bisa
+    # multiline tanpa harus melewati argumen command line.
+    if ($ChangelogFile -and (Test-Path $ChangelogFile)) {
+      $Changelog = (Get-Content -Path $ChangelogFile -Raw)
+    }
+    if ([string]::IsNullOrWhiteSpace($Changelog)) {
+      $Changelog = "Pembaruan RENATA TV $Tag"
+    }
+
     $assetFile = Get-Item $AssetPath
     $assetName = $assetFile.Name
     Write-Step "Asset siap: $assetName ($([math]::Round($assetFile.Length / 1MB, 1)) MB)"

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/network_service.dart';
+import '../theme/app_theme.dart';
 
 class OfflineBannerWrapper extends StatefulWidget {
   final Widget child;
@@ -42,16 +43,22 @@ class _OfflineBannerWrapperState extends State<OfflineBannerWrapper> {
                 child: SafeArea(
                   bottom: false,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.sm,
+                      horizontal: AppSpacing.lg,
+                    ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFDC2626).withOpacity(0.95),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.4),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF7F1D1D), Color(0xFF991B1B)],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      border: Border(
+                        bottom: BorderSide(
+                          color: AppColors.primaryLight.withOpacity(0.45),
                         ),
-                      ],
+                      ),
+                      boxShadow: AppShadows.soft(opacity: 0.45, blur: 16),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -59,18 +66,21 @@ class _OfflineBannerWrapperState extends State<OfflineBannerWrapper> {
                         Icon(
                           Icons.wifi_off_rounded,
                           color: Colors.white,
-                          size: 18,
+                          size: 16,
                         ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Anda sedang offline. Periksa koneksi internet Anda.',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.none,
+                        SizedBox(width: AppSpacing.sm),
+                        Flexible(
+                          child: Text(
+                            'Anda sedang offline. Periksa koneksi internet Anda.',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.1,
+                              decoration: TextDecoration.none,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),

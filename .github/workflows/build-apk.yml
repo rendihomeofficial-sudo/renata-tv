@@ -3,7 +3,11 @@ name: Build RENATA TV APK
 on:
   push:
     branches: [ main, master ]
+    tags: [ 'v*' ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -28,17 +32,52 @@ jobs:
       - name: Get Dependencies
         run: flutter pub get
 
+      - name: Read app version
+        id: appver
+        run: |
+          RAW=$(grep -E '^version:' pubspec.yaml | head -1 | awk '{print $2}')
+          NAME="${RAW%%+*}"
+          CODE="${RAW##*+}"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "tag=v$NAME" >> "$GITHUB_OUTPUT"
+          echo "App version: $NAME (code $CODE)"
+
       - name: Build APK Release
         run: flutter build apk --release
+
+      # Nama asset harus sama persis dengan yang ditunjuk version.json,
+      # yaitu renata-tv-vX.Y.Z.apk. Kalau berbeda, tautan unduh di aplikasi
+      # akan berakhir 404.
+      - name: Rename APK to match version.json asset name
+        run: |
+          mv build/app/outputs/flutter-apk/app-release.apk \
+             "build/app/outputs/flutter-apk/renata-tv-${{ steps.appver.outputs.tag }}.apk"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: renata-tv-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/renata-tv-${{ steps.appver.outputs.tag }}.apk
 
-      - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
-        with:
-          files: build/app/outputs/flutter-apk/app-release.apk
+      # CATATAN PENTING: workflow ini sengaja TIDAK membuat GitHub Release.
+      #
+      # Build release di project ini memakai debug keystore dari mesin
+      # pengembang. APK yang diunggah runner CI ditandatangani dengan
+      # keystore debug milik runner, sedangkan APK yang sudah terpasang di
+      # perangkat pengguna ditandatangani dengan keystore mesin pengembang.
+      # Android menolak instalasi update dengan signature berbeda
+      # (INSTALL_FAILED_UPDATE_INCOMPATIBLE), jadi APK dari CI tidak boleh
+      # menggantikan APK rilis resmi.
+      #
+      # Release resmi + asset APK + versi version.json diterbitkan oleh
+      # script rilis_otomatis.bat di mesin pengembang. Script itu membuat
+      # release lebih dulu, baru menulis version.json, sehingga tautan unduh
+      # yang ditunjuk aplikasi selalu hidup saat notifikasi update dikirim.
+      #
+      # Workflow ini berguna sebagai: (1) pembuktian build di server,
+      # (2) cadangan artifact APK kalau build lokal bermasalah.
+      - name: Summary
+        run: |
+          echo "APK build server: renata-tv-${{ steps.appver.outputs.tag }}.apk" >> "$GITHUB_STEP_SUMMARY"
+          echo "Rilis resmi diterbitkan oleh script rilis_otomatis.bat (signature)." >> "$GITHUB_STEP_SUMMARY"

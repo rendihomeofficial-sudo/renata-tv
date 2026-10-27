@@ -30,6 +30,21 @@ class ChannelCard extends StatefulWidget {
     this.onFavoriteChanged,
   });
 
+  /// Rasio lebar/tinggi kartu yang pas untuk lebar tile tertentu.
+  ///
+  /// Tinggi kartu dihitung dari tinggi pelat logo (rasio 16:10) ditambah
+  /// blok teks di bawahnya, jadi grid tidak menyisakan ruang kosong di
+  /// bawah konten kartu.
+  static double aspectRatioFor(double tileWidth) {
+    const horizontalPadding = 24.0; // padding kartu 12 + 12
+    // padding atas/bawah + jarak + baris nama + jarak + baris kategori,
+    // ditambah sedikit kelonggaran agar aman dari pembulatan piksel.
+    const contentBlockHeight = 88.0;
+    final plateHeight = (tileWidth - horizontalPadding) * 10 / 16;
+    final totalHeight = plateHeight + contentBlockHeight;
+    return tileWidth / totalHeight;
+  }
+
   @override
   State<ChannelCard> createState() => _ChannelCardState();
 }
@@ -37,6 +52,7 @@ class ChannelCard extends StatefulWidget {
 class _ChannelCardState extends State<ChannelCard> {
   bool _isFavorite = false;
   bool _isFocused = false;
+  bool _isPressed = false;
 
   /// Tombol favorit sengaja tidak ikut dalam traversal fokus D-pad supaya
   /// navigasi remote TV tetap rapi antar kartu channel.
@@ -83,24 +99,30 @@ class _ChannelCardState extends State<ChannelCard> {
           ),
         },
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          transform: Matrix4.identity()
+            ..scale(
+              _isFocused ? 1.035 : (_isPressed ? 0.985 : 1.0),
+            ),
+          transformAlignment: Alignment.center,
           decoration: BoxDecoration(
             color: _isFocused ? AppColors.surfaceElevated : AppColors.surface,
             borderRadius: BorderRadius.circular(AppRadius.lg),
+            gradient: _isFocused
+                ? AppColors.glassGradient
+                : const LinearGradient(
+                    colors: [Color(0x0AFFFFFF), Color(0x00FFFFFF)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
             border: Border.all(
-              color: _isFocused ? AppColors.primary : AppColors.border,
-              width: _isFocused ? 1.8 : 1,
+              color: _isFocused ? AppColors.primaryLight : AppColors.border,
+              width: _isFocused ? 1.6 : 1,
             ),
             boxShadow: _isFocused
-                ? [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.32),
-                      blurRadius: 18,
-                      spreadRadius: -2,
-                    ),
-                  ]
-                : null,
+                ? AppShadows.glow(AppColors.primary, opacity: 0.38)
+                : AppShadows.soft(opacity: 0.18, blur: 12, offsetY: 3),
           ),
           child: Material(
             color: Colors.transparent,
@@ -109,6 +131,11 @@ class _ChannelCardState extends State<ChannelCard> {
               focusColor: AppColors.primary.withOpacity(0.14),
               splashColor: AppColors.primary.withOpacity(0.18),
               borderRadius: BorderRadius.circular(AppRadius.lg),
+              onHighlightChanged: (pressed) {
+                if (mounted && pressed != _isPressed) {
+                  setState(() => _isPressed = pressed);
+                }
+              },
               onFocusChange: (hasFocus) {
                 if (mounted && hasFocus != _isFocused) {
                   setState(() => _isFocused = hasFocus);
@@ -116,74 +143,101 @@ class _ChannelCardState extends State<ChannelCard> {
               },
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Bagian atas: logo kanal + tombol favorit.
-                    Row(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Pelat logo memakai rasio tetap 16:10 terhadap lebar
+                    // area konten, sehingga tinggi kartu bisa dihitung
+                    // persis oleh grid dan tidak ada ruang kosong.
+                    final plateHeight = constraints.maxWidth * 10 / 16;
+                    return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: _ChannelLogo(url: widget.channel.logoUrl),
+                        SizedBox(
+                          height: plateHeight,
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: _ChannelLogo(
+                                  url: widget.channel.logoUrl,
+                                  isFocused: _isFocused,
+                                ),
+                              ),
+                              // Tombol favorit melayang di pojok pelat logo.
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: _FavoriteButton(
+                                  isFavorite: _isFavorite,
+                                  focusNode: _favoriteFocusNode,
+                                  onPressed: _toggleFavorite,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(width: 6),
-                        _FavoriteButton(
-                          isFavorite: _isFavorite,
-                          focusNode: _favoriteFocusNode,
-                          onPressed: _toggleFavorite,
-                        ),
-                      ],
-                    ),
 
-                    const SizedBox(height: 10),
+                        const SizedBox(height: 10),
 
-                    // Nama kanal.
-                    Text(
-                      widget.channel.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: _isFocused
-                            ? AppColors.textPrimary
-                            : AppColors.textPrimary,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.1,
-                      ),
-                    ),
-
-                    const SizedBox(height: 6),
-
-                    // Kategori + penanda live.
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 2.5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceMuted,
-                              borderRadius: BorderRadius.circular(AppRadius.sm),
-                            ),
+                        // Nama kanal. Baris dikunci tingginya supaya grid
+                        // bisa menghitung tinggi kartu tanpa menyisakan
+                        // ruang kosong maupun meluber.
+                        SizedBox(
+                          height: 24,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
                             child: Text(
-                              widget.channel.category,
+                              widget.channel.name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.1,
                               ),
                             ),
                           ),
                         ),
-                        const Spacer(),
-                        _LiveBadge(),
+
+                        const SizedBox(height: 6),
+
+                        // Kategori + penanda live.
+                        SizedBox(
+                          height: 22,
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 2.5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceMuted,
+                                    borderRadius:
+                                        BorderRadius.circular(AppRadius.sm),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Text(
+                                    widget.channel.category,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              _LiveBadge(isFocused: _isFocused),
+                            ],
+                          ),
+                        ),
                       ],
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -194,36 +248,46 @@ class _ChannelCardState extends State<ChannelCard> {
   }
 }
 
-/// Logo kanal dengan kotak putih dan fallback ikon TV.
+/// Logo kanal dengan pelat putih dan fallback ikon TV.
 class _ChannelLogo extends StatelessWidget {
   final String url;
+  final bool isFocused;
 
-  const _ChannelLogo({required this.url});
+  const _ChannelLogo({required this.url, required this.isFocused});
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 16 / 10,
-      child: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(AppRadius.md),
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isFocused ? 0.42 : 0.28),
+            blurRadius: isFocused ? 16 : 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(
+          color: isFocused
+              ? AppColors.primaryLight.withOpacity(0.55)
+              : AppColors.borderStrong,
         ),
-        child: url.isEmpty
-            ? const _LogoFallback()
-            : (url.startsWith('assets/')
-                ? Image.asset(
-                    url,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const _LogoFallback(),
-                  )
-                : Image.network(
-                    url,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const _LogoFallback(),
-                  )),
       ),
+      child: url.isEmpty
+          ? const _LogoFallback()
+          : (url.startsWith('assets/')
+              ? Image.asset(
+                  url,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const _LogoFallback(),
+                )
+              : Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const _LogoFallback(),
+                )),
     );
   }
 }
@@ -246,13 +310,20 @@ class _LogoFallback extends StatelessWidget {
 
 /// Penanda kanal disiarkan langsung.
 class _LiveBadge extends StatelessWidget {
+  final bool isFocused;
+
+  const _LiveBadge({required this.isFocused});
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.live.withOpacity(0.15),
+        color: AppColors.live.withOpacity(isFocused ? 0.22 : 0.14),
         borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(
+          color: AppColors.live.withOpacity(isFocused ? 0.55 : 0.28),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -260,19 +331,25 @@ class _LiveBadge extends StatelessWidget {
           Container(
             width: 5,
             height: 5,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.live,
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.live.withOpacity(0.8),
+                  blurRadius: 6,
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 5),
           const Text(
             'LIVE',
             style: TextStyle(
               color: AppColors.live,
               fontSize: 9.5,
               fontWeight: FontWeight.w800,
-              letterSpacing: 0.6,
+              letterSpacing: 0.7,
             ),
           ),
         ],
@@ -296,17 +373,28 @@ class _FavoriteButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.transparent,
+      // Latar gelap supaya ikon tetap terbaca di atas pelat logo putih.
+      color: isFavorite
+          ? AppColors.primary.withOpacity(0.92)
+          : Colors.black.withOpacity(0.42),
       shape: const CircleBorder(),
       child: IconButton(
-        iconSize: 20,
+        iconSize: 19,
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
         focusNode: focusNode,
         tooltip: isFavorite ? 'Hapus dari favorit' : 'Tambah ke favorit',
         icon: Icon(
           isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-          color: isFavorite ? AppColors.primaryLight : AppColors.textMuted,
+          color: isFavorite ? Colors.white : Colors.white.withOpacity(0.85),
+          shadows: isFavorite
+              ? [
+                  Shadow(
+                    color: AppColors.primary.withOpacity(0.6),
+                    blurRadius: 8,
+                  ),
+                ]
+              : null,
         ),
         onPressed: onPressed,
       ),

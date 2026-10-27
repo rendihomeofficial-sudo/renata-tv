@@ -30,3 +30,7 @@ Thumbs.db
 # Logs
 *.log
 *.apk
+
+# Skrip investigasi sementara (dipakai saat development, tidak ikut repo)
+tmp_*.py
+popup_update_*.png
