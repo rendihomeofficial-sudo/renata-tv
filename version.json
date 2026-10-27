@@ -1,7 +1,7 @@
 {
-  "latestVersionCode": 6,
-  "latestVersionName": "1.5.0",
-  "apkDownloadUrl": "https://github.com/rendihomeofficial-sudo/renata-tv/releases/download/v1.5.0/renata-tv-v1.5.0.apk",
-  "changelog": "Redesain tampilan: Home Screen baru dengan pencarian & kategori, kartu kanal bergaya modern, pemutar landscape dengan daftar kanal di samping video, splash screen animasi, ikon launcher adaptive, dan mirror otomatis (fallback URL) untuk link streaming yang lebih stabil.",
+  "latestVersionCode": 7,
+  "latestVersionName": "1.6.0",
+  "apkDownloadUrl": "https://github.com/rendihomeofficial-sudo/renata-tv/releases/download/v1.6.0/renata-tv-v1.6.0.apk",
+  "changelog": "Perbaikan kanal dan pemutar: auto play kanal embed lebih andal (mencoba semua elemen video, API JWPlayer/video.js, dan mengulang sampai 15 detik), kanal TVRI duplikat dihapus dan kategori TVRI Nasional diperbaiki, pesan error IDX TV kini jelas, plus perbaikan UI dan stabilitas streaming.",
   "forceUpdate": false
 }
